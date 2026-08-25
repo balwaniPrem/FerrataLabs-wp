@@ -1,0 +1,52 @@
+/* ------------------------------------------------------------------
+ * Theme-only additions. Everything else comes from assets/site.css,
+ * which is the compiled Tailwind v4 output and must not be hand-edited.
+ * ------------------------------------------------------------------ */
+
+/* next/font injected these as generated CSS variables. In WordPress the
+ * families are loaded from Google Fonts, so the variables are declared here
+ * instead — the token names match CLAUDE.md §4 exactly. */
+:root {
+  --font-archivo: "Archivo", "Archivo Fallback";
+  --font-plex-sans: "IBM Plex Sans", "IBM Plex Sans Fallback";
+  --font-plex-mono: "IBM Plex Mono", "IBM Plex Mono Fallback";
+}
+
+/* React conditionally rendered these; in PHP they are always in the DOM and
+ * the open state is an attribute, so they need an explicit closed state. */
+.mega-wrap:not([data-open="true"]) .mega {
+  display: none;
+}
+.drawer:not([data-open="true"]) {
+  display: none;
+}
+
+/* WordPress admin bar must not sit on top of the sticky nav for logged-in editors. */
+body.admin-bar .nav {
+  top: 32px;
+}
+@media screen and (max-width: 782px) {
+  body.admin-bar .nav {
+    top: 46px;
+  }
+}
+
+/* The form's inline error and success states, ported from ContactForm.tsx. */
+.form-err,
+.form-ok h4,
+.err {
+  font-family: var(--body);
+}
+
+/* Required-field marker. --accent rather than a red, which this palette has no room
+ * for; the asterisk carries the meaning and the label already reads as a label. */
+.req {
+  color: var(--accent);
+  font-weight: 600;
+}
+.req-note {
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--steel);
+  margin: 0 0 18px;
+}

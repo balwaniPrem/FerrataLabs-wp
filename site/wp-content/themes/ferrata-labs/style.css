@@ -1,0 +1,17 @@
+/*
+Theme Name: Ferrata Labs
+Theme URI: https://ferratalabs.ai
+Author: Ferrata Labs
+Description: The Ferrata Labs marketing site — a direct port of the Next.js build. Light theme only, zero border-radius, hairline grids, Archivo + IBM Plex. Design system is governed by CLAUDE.md §4: do not introduce rounded corners, drop shadows, gradient buttons or Inter.
+Version: 1.0.0
+Requires at least: 6.4
+Requires PHP: 8.0
+License: Proprietary
+Text Domain: ferrata-labs
+*/
+
+/*
+ * Intentionally empty. The compiled site stylesheet is assets/site.css and is
+ * enqueued from functions.php; theme-specific additions live in assets/theme.css.
+ * WordPress only needs this file for the header block above.
+ */

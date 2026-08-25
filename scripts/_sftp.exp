@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+# Shared expect wrapper. Reads credentials from ../ferratalabs.sftp via the
+# environment so the password never appears in a command line or a log.
+set timeout 120
+log_user 1
+spawn -noecho sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+      -P $env(SFTP_PORT) $env(SFTP_USER)@$env(SFTP_HOST)
+expect {
+  -re "(?i)password:" { log_user 0; send "$env(SFTP_PASS)\r"; log_user 1; exp_continue }
+  "sftp>" {}
+  timeout { puts "\nTIMEOUT"; exit 2 }
+  eof { puts "\nCLOSED"; exit 3 }
+}
+foreach c [split $env(SFTP_CMDS) "\n"] {
+  if {$c eq ""} continue
+  send "$c\r"
+  expect "sftp>"
+}
+send "quit\r"
+expect eof

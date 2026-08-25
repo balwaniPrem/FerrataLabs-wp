@@ -1,0 +1,30 @@
+# Only site-specific work is tracked. WordPress core, third-party plugins and
+# uploads are replaceable and huge, so they stay out.
+
+# never
+wp-config.php
+*.sftp
+.env*
+
+# core (managed by WordPress/10Web)
+site/wp-admin/
+site/wp-includes/
+site/wp-*.php
+site/index.php
+site/license.txt
+site/readme.html
+site/xmlrpc.php
+
+# default themes and third-party plugins (installed via wp-admin, not authored here)
+site/wp-content/themes/twenty*/
+site/wp-content/plugins/
+site/wp-content/upgrade/
+
+# generated, cached, or user-uploaded
+site/wp-content/uploads/
+site/wp-content/cache/
+site/wp-content/10web-page-cache-config/
+site/wp-content/object-cache.php
+site/wp-content/mu-plugins/10web-manager/
+
+.DS_Store
