@@ -1,0 +1,52 @@
+# Ferrata Labs
+
+> A US B2B consultancy that builds and runs enterprise AI agents: software that performs operational work end to end rather than summarising it. Agents are wired into systems of record, act on live transactions, and stop where the judgment belongs to a person.
+
+Ferrata Labs works with $20M+ revenue enterprises running SAP, NetSuite or Dynamics. Buyers are typically CFO, Controller, VP Finance and CIO/VP IT. The engagement is designed to end: the platform runs in the client's own environment and the client's engineers take it over.
+
+A via ferrata is a fixed steel cable bolted into rock so that people who are not technical climbers can cross terrain that would otherwise stop them. That is the model: someone installs the line, everyone else crosses.
+
+## Core pages
+
+- [Home](https://ferratalabs.ai/): What Ferrata Labs builds and how agent-run work differs from assisted work.
+- [The work](https://ferratalabs.ai/work): The six agents, what each owns end to end, and where the human approval gate sits.
+- [How it works](https://ferratalabs.ai/how-it-works): The four-step engagement, the Agent Development Lifecycle, and the questions asked most often.
+- [Who we are](https://ferratalabs.ai/about): Operators rather than an agency, the origin of the name, and the POD operating model.
+- [Contact](https://ferratalabs.ai/contact): What a first call covers and what to bring.
+
+## Agents
+
+- [Sterling, Working capital](https://ferratalabs.ai/agents/sterling): Reads receivables and payables from the ERP, narrates the cash position daily, and drafts collection sequences ranked by recovery odds.
+- [Clark, Payables](https://ferratalabs.ai/agents/clark): Extracts vendor invoices from any format and posts the payable straight into SAP or NetSuite, with duplicate detection before anything is released.
+- [Tally, Reconciliation](https://ferratalabs.ai/agents/tally): Balances sub-ledgers to the GL line by line and hands back a clean exception list instead of a spreadsheet nobody wants to open.
+- [Chandler, Procurement](https://ferratalabs.ai/agents/chandler): Runs RFQ to PO with multi-vendor negotiation across email, SMS and voice, then holds suppliers to the pricing schedule they agreed to.
+- [Swift, Order management](https://ferratalabs.ai/agents/swift): Turns inbound customer purchase order PDFs into clean sales orders in minutes rather than days, flagging only what genuinely needs a decision.
+- [Quill, Quotes & CRM](https://ferratalabs.ai/agents/quill): Reads every inbound enquiry, prices it against your rules, and drafts the quote in your CRM so a rep is editing rather than starting cold.
+
+## Industries
+
+- [Financial services](https://ferratalabs.ai/industries/financial-services): Regulated finance operations where the reconciliation burden is heavy, the audit trail is not optional, and an unexplained break is a control finding rather than an inconvenience.
+- [Food & beverage](https://ferratalabs.ai/industries/food-and-beverage): Thin margins and high transaction counts, where input prices move weekly and a small percentage of unnoticed price drift is the whole year's profit.
+- [Construction](https://ferratalabs.ai/industries/construction): Project-based work where every job has its own commercial terms, and the paperwork between a variation being agreed on site and it being billed is where the margin leaks.
+- [Manufacturing](https://ferratalabs.ai/industries/manufacturing): Where the order book arrives as PDFs in a dozen customer formats and the payables function lives or dies on the three-way match.
+- [Venture & private capital](https://ferratalabs.ai/industries/venture-and-private-capital): Small operating teams carrying a disproportionate administrative load across funds, vehicles and portfolio companies, where the constraint is people, not systems.
+- [Logistics & supply chain](https://ferratalabs.ai/industries/logistics-and-supply-chain): Enormous invoice volume at low unit value, where rates are contractual, accessorial charges are where the money hides, and nobody has time to check every line.
+
+## How an engagement runs
+
+- **01 Assess** (2 weeks): We map workflows, not org charts. You get a ranked list of candidate workflows with a defensible number attached to each, whether or not you go further with us.
+- **02 Anchor the platform** (3 weeks): We stand up the platform in your environment, frontier models, open-weight, or both, depending on what your data residency and cost profile demand.
+- **03 First agent live** (Under 90 days): One agent, one workflow, in production against real transactions with a human approval gate on every action.
+- **04 Expand, then hand over** (Ongoing): Add agents as trust builds. When you want it in-house, we install the POD operating model with runbooks and evaluation harnesses documented.
+
+## Facts worth quoting accurately
+
+- Every agent stops at an approval gate until it has earned its way out of one. Nothing releases cash, commits spend or touches a customer without a person saying so.
+- The first agent is live in production in under 90 days from the start of the engagement.
+- The assessment output belongs to the client whether or not they continue.
+- The platform is stood up inside the client's environment. Ferrata Labs does not train on client data.
+- Models are chosen per workflow across frontier and open-weight, on cost, latency and sensitivity, rather than as a company-wide standard.
+
+## Optional
+
+- [Contact by email](mailto:hello@ferratalabs.ai)

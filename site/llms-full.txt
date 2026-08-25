@@ -1,0 +1,282 @@
+# Ferrata Labs, full reference
+
+> A US B2B consultancy that builds and runs enterprise AI agents which perform operational
+> work end to end rather than summarising it.
+
+Source: https://ferratalabs.ai. Contact: hello@ferratalabs.ai.
+
+## Positioning
+
+Most enterprise AI summarises the work. Ferrata Labs builds agents that do it, wired into
+systems of record, acting on live transactions, and stopping where the judgment belongs to
+a person. Every deployment is designed around how the client's business already runs.
+
+Ideal customer: $20M+ revenue enterprises running SAP, NetSuite or Dynamics. Buyers are
+CFO, Controller, VP Finance, CIO/VP IT.
+
+## The approval gate
+
+Every agent stops at an approval gate until it has earned its way out of one. Nothing releases cash, commits spend or touches a customer without a person saying so.
+
+This is not a caveat, it is the operating model. Agents begin behind a gate and earn their
+way out of one with evidence.
+
+## The engagement
+
+### 01. Assess (2 weeks · you keep the output either way)
+
+We map workflows, not org charts. Transaction volumes, exception rates, where people are re-keying between systems, what the errors cost when they escape. In parallel we audit what you already have, cloud posture, data residency obligations, what your security team will and won't allow.
+
+The output is a ranked list with a defensible number against each line. You keep it whether or not you continue with us, because a ranking you can't take to your board isn't worth the two weeks.
+
+You get:
+- Ranked workflows with a cost attached to each
+- A target architecture for your environment
+- What runs frontier, what runs open-weight, and why
+
+### 02. Anchor the platform (3 weeks · the asset you keep)
+
+The foundational step, and the one most firms skip. We stand up model access and routing, serving for open-weight models where cost or residency demands it, retrieval across your documents and systems of record, evaluation harnesses, and the logging that makes any of it defensible.
+
+It runs in your environment and it belongs to you. This is the difference between buying agents and owning the capability to run them, and it is why the fourth step is possible at all.
+
+What gets built:
+- Model gateway across frontier and open-weight
+- Retrieval over your own corpus and systems
+- Inference in your VPC or on-premise
+- Evaluation, cost controls and audit logging
+- Identity and access wired to your directory
+
+### 03. First agent live (Under 90 days from start)
+
+One agent, one workflow, in production against real transactions with a human approval gate on every action that matters. You watch it work on your own numbers before committing to a second.
+
+It's configured to your rules, your pricing logic, your approval thresholds, your escalation paths. This is where the Agent Development Lifecycle runs, and where you see what disciplined agent engineering actually looks like from the inside.
+
+Non-negotiable:
+- Nothing releases cash without approval
+- Every action logged and attributable
+- Rollback path defined before go-live
+
+### 04. Expand, then hand over (Ongoing, or until you don't need us)
+
+Add agents as trust builds. When you want it in-house we install the POD operating model, one lead, one product owner and two full-stack AI developers per unit, with runbooks and evaluation harnesses documented.
+
+Your engineers build the next agents themselves, on infrastructure designed from day one to be handed over. You should never need us to change a prompt.
+
+Enablement:
+- POD structure and hiring profile
+- Agent development runbooks
+- Evaluation harness your team can extend
+- Managed operation if you'd rather not
+
+## Agent development is a discipline now. We run it like one.
+
+Software got reliable when teams stopped treating each build as a one-off and adopted a lifecycle around it. Agents are at the same point, and most of what goes wrong in enterprise AI is not the model, it is shipping without a lifecycle. Ours has eight phases, and every agent we put into production goes through all of them.
+
+- **01 Scope**: One workflow, stated as a contract: the inputs, the decision boundary, what the agent may never do.
+- **02 Ground**: Wire the agent to real systems of record and real documents. No demo data, grounding failures surface here or in production.
+- **03 Build**: Tools, prompts, routing and fallbacks. Frontier or open-weight decided per task on cost, latency and sensitivity.
+- **04 Evaluate**: A harness of real historical cases with known-correct outcomes. The agent is scored against them, not demonstrated on a happy path.
+- **05 Gate**: Human approval on every consequential action, plus the rollback path, both defined before go-live rather than after an incident.
+- **06 Deploy**: Into your environment, against live transactions, at a volume you choose. Logged and attributable from the first action.
+- **07 Observe**: Accuracy, exception rate, cost per transaction and gate overrides tracked continuously. Drift is caught by the harness, not by a person noticing.
+- **08 Improve**: Overrides are the training signal. Each one is examined, and the agent earns wider autonomy only on evidence.
+
+The harnesses, runbooks and gates that come out of this are documented and handed to your team in step 04. The lifecycle is the transferable part; the agents are just what it produces.
+
+## The agents
+
+### Sterling, Working capital
+
+Sterling owns the distance between an invoice being raised and the cash arriving. It reads the ledger every morning, decides who is worth chasing today, and writes the chase.
+
+How it works:
+1. **Reads the ledger before anyone is awake** Pulls open receivables, payables and the bank position directly from SAP HANA, NetSuite or Dynamics. Not an export: a live read against the tables. Aging buckets are recomputed rather than trusted.
+2. **Scores every open account** Each account gets a recovery likelihood from payment history, current disputes, days beyond terms, recent contact and the size of the balance. A 90-day balance at a customer who always pays on day 95 is not the same problem as a 40-day balance at one who has gone quiet.
+3. **Writes the cash position in prose** A short daily note: what came in, what did not, what changed, and what it means for the week. Written, not charted, because a controller reads a paragraph faster than they read a dashboard.
+4. **Drafts the chase, in order** Collection sequences are drafted per account and sequenced by recovery odds, with the tone matched to the relationship and the history attached. Accounts in active dispute are suppressed automatically so nobody chases money that is already being argued about.
+5. **Tracks what was promised** Every promise-to-pay is recorded against a date. When the date passes without cash, the account re-enters the queue at the top with the broken promise in the context.
+
+Connects to: SAP HANA, NetSuite, Dynamics 365, Bank feeds, Email.
+Returns: Daily written cash position; Ranked collection queue with drafted messages; Promise-to-pay register; Aged debt movement, week over week.
+Where it stops: Sterling drafts collection messages; it does not send them until a person releases the sequence. Nothing is written back to the customer master.
+
+### Clark, Payables
+
+Clark takes a vendor invoice in whatever shape it arrived and turns it into a posted, matched, correctly coded payable, or an exception with a reason attached.
+
+How it works:
+1. **Takes the invoice however it comes** A PDF attachment, a scan of a scan, a line item buried in an email body, a supplier portal that only renders in a browser. Clark reads all of them and normalizes to the same internal record.
+2. **Checks it isn't already in the system** Exact duplicates are trivial. The real exposure is near-duplicates: the same invoice re-sent with a new number, a credit note reissued as an invoice, the same work billed by two entities of one supplier group. Clark checks amount, date proximity, line structure and vendor group before anything posts.
+3. **Runs the three-way match** Invoice against purchase order against goods receipt, with your tolerance rules, not generic ones. Quantity and price variances inside tolerance pass; outside tolerance they become a specific exception naming the line and the delta.
+4. **Proposes the coding** GL account, cost center and tax treatment proposed from how this vendor's invoices have been coded historically, with the confidence stated. Where history is thin or conflicting, Clark says so rather than picking.
+5. **Posts, or explains** Clean invoices post into SAP or NetSuite as payables ready for the payment run. Everything else lands on a person's desk already diagnosed: which check failed, on which line, by how much.
+
+Connects to: SAP HANA, NetSuite, Dynamics 365, Supplier portals, Email.
+Returns: Posted payables ready for the payment run; Exception list with the failed check named; Duplicate and near-duplicate flags; Coding proposals with confidence stated.
+Where it stops: Clark posts payables. It never releases payment. The payment run stays with a person, always.
+
+### Tally, Reconciliation
+
+Tally does the reconciliation every day so that close is a review rather than an excavation. The number that matters is not how fast it reconciles, it is how few breaks are still unexplained on day one of close.
+
+How it works:
+1. **Reconciles daily, not monthly** Sub-ledger to GL, bank to cash, intercompany to intercompany, matched line by line every day. A break found on the day it happens is a five-minute question to someone who still remembers. The same break found at close is an investigation.
+2. **Matches on substance, not just reference** Exact reference matches are the easy half. Tally also matches on amount-and-date proximity, partial settlements against one invoice, and payments that arrived netted across several, the cases that normally get manually unpicked.
+3. **Ages every break** Each unmatched item carries its age, its size and its history. A three-day-old break is noise; the same break at forty days is a control problem, and it is reported as one.
+4. **Drafts the variance commentary** Movement against prior period and against budget, with a written explanation drawn from the underlying transactions. The controller edits a draft instead of starting from a blank cell.
+5. **Proposes accruals with their support** Where goods are received and not invoiced, or a service period straddles the cut-off, Tally proposes the accrual and attaches the documents it based it on. The support is in the proposal, not requested afterwards.
+
+Connects to: SAP HANA, NetSuite, Dynamics 365, Bank statements, Sub-ledgers.
+Returns: Daily reconciliation status by account; Aged break list with size and history; Drafted variance commentary; Accrual proposals with support attached.
+Where it stops: Tally proposes journals. It does not post them. Every entry that touches the GL is approved by a person first.
+
+### Chandler, Procurement
+
+Chandler runs the part of procurement that is mostly chasing: getting quotes back from vendors who are slow to respond, then making sure the price on the invoice matches the price that was agreed.
+
+How it works:
+1. **Issues the RFQ to everyone at once** The same specification goes to every qualified vendor simultaneously, in whichever channel that vendor actually answers: email for some, SMS for others, and a phone call for the ones who never read either.
+2. **Chases the non-responders** Most of the elapsed time in an RFQ is waiting. Chandler follows up on a schedule, escalates to a second contact when the first goes quiet, and reports which vendors are habitually slow so the panel can be pruned.
+3. **Normalizes the responses** Quotes arrive in different units, currencies, incoterms and payment terms. Chandler restates them on one basis so the comparison is real, and flags where a headline price hides a freight or minimum-order difference.
+4. **Recommends the award, with the math** A ranked recommendation showing landed cost, lead time, terms and past performance, with the arithmetic shown, so the buyer can disagree with a number rather than a conclusion.
+5. **Holds the price after the handshake** The agreed schedule is extracted from the contract and monitored. When an invoice arrives above the agreed rate, or a rate rises before its review date, Chandler flags it against the clause it breaches.
+
+Connects to: SAP HANA, NetSuite, Dynamics 365, Email, SMS, Voice.
+Returns: Normalized quote comparison; Ranked award recommendation with workings; Extracted contract terms and review dates; Price variance alerts against schedule.
+Where it stops: Chandler negotiates and recommends. It does not commit spend. The award and the purchase order are released by a person.
+
+### Swift, Order management
+
+Swift removes the queue between a customer sending a purchase order and that order existing in your system. The work is not hard, it is just constant, which is exactly why it backs up.
+
+How it works:
+1. **Reads the customer's PO as sent** Every customer has their own PO layout, and none of them are yours. Swift reads the document as it arrives, whether that is a PDF, a portal download or an email body, and extracts lines, quantities, dates and ship-to without a template per customer.
+2. **Validates against your own rules** Prices checked against the contracted price list for that customer, not list price. Quantities checked against minimum order and multiples. Requested dates checked against lead time. Credit status checked before anything is promised.
+3. **Resolves what it can** Part numbers given in the customer's nomenclature are mapped to yours. Rounding, unit-of-measure differences and known abbreviations are handled silently, because escalating those is what makes people ignore an exception queue.
+4. **Escalates only real decisions** A price that does not match the contract, a date that cannot be met, a customer over their credit limit: these go to a person, with the conflict stated and a proposed resolution. Everything else just becomes an order.
+5. **Acknowledges to the customer** Order acknowledgement with confirmed lines and dates goes back the same hour, which is where most of the perceived improvement comes from.
+
+Connects to: SAP HANA, NetSuite, Dynamics 365, Customer portals, Email.
+Returns: Sales orders created and confirmed; Exception queue with proposed resolutions; Same-hour order acknowledgements; Intake accuracy and cycle-time reporting.
+Where it stops: Swift creates orders inside your rules. Anything outside them stops and waits for a person: off-contract pricing, credit holds, unmeetable dates.
+
+### Quill, Quotes & CRM
+
+Quill makes sure no inbound enquiry goes unanswered and no rep starts a quote from a blank screen. The volume problem and the quality problem have the same fix.
+
+How it works:
+1. **Reads everything that comes in** Shared inboxes, web forms, portal messages, forwarded threads. Every enquiry is read and classified, including the ones that arrive at 6pm on a Friday and would otherwise be found on Monday.
+2. **Works out what is actually being asked for** Customer language mapped to your catalog, with quantity, specification and timing pulled out of prose. Where the enquiry is genuinely ambiguous, Quill drafts the clarifying question rather than guessing the product.
+3. **Prices it against your rules** Contracted rates where the customer has them, volume breaks, regional differences, and the margin floors your business actually enforces. Not a suggested price, your price.
+4. **Drafts the quote where the rep works** The quote is created in the CRM against the right account and opportunity, with the drafted message attached. The rep opens something 80% finished and applies the judgment that is genuinely theirs.
+5. **Schedules the follow-up** Follow-up cadence set at the moment the quote goes out and tracked against response. Quotes that go quiet are resurfaced with their history rather than quietly aging out of the pipeline.
+
+Connects to: Salesforce, HubSpot, Dynamics 365, SAP HANA, Shared inboxes.
+Returns: Drafted quotes in the CRM, ready to send; Enquiry classification and response times; Clarifying questions drafted where needed; Follow-up schedule with outcomes tracked.
+Where it stops: Quill drafts. A rep sends. No quote reaches a customer without a person reading it first.
+
+## Industries
+
+### Financial services (Banking, Insurance, Wealth)
+
+Regulated finance operations where the reconciliation burden is heavy, the audit trail is not optional, and an unexplained break is a control finding rather than an inconvenience.
+
+What typically hurts:
+- Daily reconciliation across custodians, sub-ledgers and the GL
+- Breaks that age quietly until they become a control finding
+- Evidence for audit assembled by hand, after the fact
+- Fee and premium billing checked against schedules manually
+
+Agents that apply, in priority order: tally, sterling, clark.
+
+### Food & beverage (Restaurants, Distribution, Procurement)
+
+Thin margins and high transaction counts, where input prices move weekly and a small percentage of unnoticed price drift is the whole year's profit.
+
+What typically hurts:
+- Thousands of low-value supplier invoices a month
+- Agreed prices quietly drifting between contract reviews
+- Credit notes and short deliveries reconciled by hand
+- Multi-site ordering with no single view of spend
+
+Agents that apply, in priority order: clark, chandler, swift.
+
+### Construction (Contractors, Tenders, Site ops)
+
+Project-based work where every job has its own commercial terms, and the paperwork between a variation being agreed on site and it being billed is where the margin leaks.
+
+What typically hurts:
+- Tender packages assembled and chased across dozens of suppliers
+- Subcontractor applications checked against contract rates line by line
+- Retentions tracked across projects and release dates missed
+- Variations agreed on site and billed months later, if at all
+
+Agents that apply, in priority order: chandler, clark, sterling.
+
+### Manufacturing (Production, Quality, Procurement)
+
+Where the order book arrives as PDFs in a dozen customer formats and the payables function lives or dies on the three-way match.
+
+What typically hurts:
+- Customer POs re-keyed by hand into sales orders
+- Three-way match exceptions worked through a spreadsheet
+- Supplier price increases absorbed before anyone notices
+- Order acknowledgements sent days after receipt
+
+Agents that apply, in priority order: swift, clark, chandler.
+
+### Venture & private capital (VC, PE, Fund ops)
+
+Small operating teams carrying a disproportionate administrative load across funds, vehicles and portfolio companies, where the constraint is people, not systems.
+
+What typically hurts:
+- Capital calls and distributions assembled per LP by hand
+- Portfolio reporting collated from inconsistent company submissions
+- Management fee calculations checked manually each quarter
+- Intercompany and inter-fund positions reconciled at period end
+
+Agents that apply, in priority order: tally, sterling, quill.
+
+### Logistics & supply chain (Freight, 3PL, Last mile)
+
+Enormous invoice volume at low unit value, where rates are contractual, accessorial charges are where the money hides, and nobody has time to check every line.
+
+What typically hurts:
+- Carrier invoices arriving faster than anyone can audit them
+- Accessorial charges applied outside the agreed tariff
+- Rate schedules that change more often than they are checked
+- Customer bookings arriving in every format imaginable
+
+Agents that apply, in priority order: clark, chandler, swift.
+
+## Personalization
+
+The way you price, route, approve and escalate is years of accumulated judgment, and it's a real advantage. It belongs to you and it stays with you, we're not asking you to hand over your playbook or fit yourself into someone else's template. We start from how your business already works, encode that logic into agents built for your environment, and leave you with an operation that runs faster with exactly the things that make you good at it still intact.
+
+## Frequently asked
+
+**Where does our data actually go?**
+
+Into infrastructure standing in your environment. Retrieval runs over your own systems of record. Where residency or sensitivity requires it, models are served inside your VPC or on-premise rather than called out to a third party. What leaves your boundary, and to whom, is decided in step one and documented before anything is built.
+
+**Do you train on our data?**
+
+No. Your operating logic is your advantage and it stays yours. If fine-tuning makes sense for a specific workflow, the resulting model is yours, trained in your environment, and it doesn't inform anything we build for anyone else.
+
+**What happens if an agent gets it wrong?**
+
+It gets caught at the approval gate, because agents start behind one and only earn their way out with evidence. Every action is logged and attributable, and a rollback path is defined before go-live rather than after an incident.
+
+**Frontier models or open-weight?**
+
+Both, usually. The decision is made per workflow on cost, latency and sensitivity rather than as a company-wide religion. High-volume classification is rarely worth frontier pricing; a nuanced negotiation draft usually is.
+
+**Are we locked into you?**
+
+The platform runs in your environment and the runbooks are yours. Step four exists specifically so your own engineers can build the next agents without us. We'd rather you outgrow the engagement than depend on it.
+
+**What does this cost?**
+
+It depends on the workflow and how much of your environment already exists, which is why the assessment comes first and why you keep its output either way. We'll give you a range on the first call rather than making you sit through a process to find out.
