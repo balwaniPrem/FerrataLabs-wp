@@ -16,6 +16,25 @@ not, and the next `pull.sh` silently overwrites the work.
 This repo takes straight commits. Branches and PRs live in the Next.js repo; a
 branch here would describe a state the server is not in.
 
+## Remotes
+
+| Repo | Holds |
+|---|---|
+| `balwaniPrem/FerrataLabs-wp` (this one) | the WordPress site |
+| `balwaniPrem/FerrataLabs` | the Next.js source of truth |
+
+Both are **public**. Nothing here is secret by construction: `wp-config.php`, the
+salts and `../ferratalabs.sftp` are all gitignored and have never been committed.
+Check that before adding anything to `site/`, because this repo mirrors a live
+document root and the default assumption for a file on the server is that it does
+not belong in git.
+
+Worth knowing: the theme carries `parts/pledge.php`, so Pledge is public source
+here as it already is in the Next repo. CLAUDE.md §12 calls Pledge unlisted rather
+than private, and a public repo is the outer edge of that. If Pledge ever needs to
+be genuinely confidential, both repos go private and it is authentication that
+protects the app, not routing.
+
 ## What is tracked
 
 `site/` mirrors the document root at `/home/wplive/web/wp-live/`.
