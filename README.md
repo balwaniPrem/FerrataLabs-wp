@@ -42,6 +42,45 @@ can never be committed. Document root is `/home/wplive/web/wp-live/`.
 Pull first, commit, then edit. The server is authoritative: someone can change
 the theme through wp-admin at any time, so a pull can overwrite local work.
 
+## `site/v2/` — the redesign preview
+
+A static snapshot of the Next.js site served at **ferratalabs.ai/v2/**, so the
+repositioning work can be reviewed on the real domain before anything is ported
+into the theme. It is not WordPress: 17 plain HTML files plus their assets, sitting
+in a directory the WordPress rewrite passes straight through.
+
+**It is self-contained.** Every internal link stays inside `/v2/`, so clicking
+around the preview never drops back onto the live v1 pages. That is `basePath`,
+set in the Next repo's `next.config.ts` and gated behind `PREVIEW_BASE` so normal
+production builds are untouched.
+
+**Every page carries `noindex, nofollow`.** A preview on the live domain is
+near-duplicate content against the real pages, and the snapshot script refuses to
+write a page it could not mark. Do not "fix" this by removing the meta tag.
+
+To regenerate after further changes in the Next repo:
+
+```bash
+cd ../FerrataLabs
+PREVIEW_BASE=/v2 npm run build
+PREVIEW_BASE=/v2 npx next start -p 3002 &
+node scripts/snapshot-preview.mjs /v2 http://localhost:3002 ../FerrataLabs-WordPress/site/v2
+```
+
+Then upload `site/v2/` wholesale. Chunk filenames are content-hashed and the build
+ID changes every build, so **delete the remote `v2/_next/` first** or the directory
+accumulates orphans from every previous snapshot.
+
+Two things the snapshot cannot carry, both expected:
+
+- **The contact form does not submit.** It is a Next server action and there is no
+  Next server behind these files. The form renders for review only.
+- **`/pledge` and `/sterling` are absent.** The crawler follows links, and nothing
+  links to the unlisted consoles. That is the correct outcome, per CLAUDE.md §12.
+
+Delete the whole thing with one `rm -r` of `v2/` on the server when it has served
+its purpose. Nothing else references it.
+
 ## The two legitimately diverge
 
 Not drift to be fixed:
