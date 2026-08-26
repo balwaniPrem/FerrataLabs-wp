@@ -3,10 +3,18 @@
 The live site at ferratalabs.ai. Separate from the Next.js repo at
 `../FerrataLabs`, which is the design reference and the source of `llms.txt`.
 
-**Two copies, on purpose.** The Next.js app is where the design system, the typed
-content and the generated AEO files live. This repo is what actually serves the
-domain. Neither is a copy of the other; when they disagree, decide deliberately
-rather than syncing blindly.
+**Changes flow one way: Next.js first, here second.**
+
+`../FerrataLabs` is the source of truth for design, copy and content. Work is built
+and verified there on a branch, reviewed as a PR, and only then ported here and
+pushed live.
+
+**Do not edit this theme to try something out, and do not edit through wp-admin as a
+shortcut.** Either makes the live site the source of truth for design, which it is
+not, and the next `pull.sh` silently overwrites the work.
+
+This repo takes straight commits. Branches and PRs live in the Next.js repo; a
+branch here would describe a state the server is not in.
 
 ## What is tracked
 
@@ -33,6 +41,15 @@ can never be committed. Document root is `/home/wplive/web/wp-live/`.
 
 Pull first, commit, then edit. The server is authoritative: someone can change
 the theme through wp-admin at any time, so a pull can overwrite local work.
+
+## The two legitimately diverge
+
+Not drift to be fixed:
+
+- `/pledge` and `/sterling` consoles are Next-only routes and do not belong here
+- `llms.txt` and `llms-full.txt` are **generated** in the Next repo and **exported**
+  here. Never hand-edit them. Regenerate with `npm run export:wp` in `../FerrataLabs`
+- Yoast settings, plugins and WordPress pages exist only on the server
 
 ## Known state
 
