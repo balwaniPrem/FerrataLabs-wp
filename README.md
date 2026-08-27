@@ -135,8 +135,14 @@ What the transform does, all of it §4 and §7:
 - 113 em dashes removed per §7: `·` where one separated two labels, `:` where it
   joined a clause, `–` where it marked an empty table cell
 
-Two things worth knowing:
+Three things worth knowing:
 
+- **The favicon link needs `sizes="any"` and `type="image/svg+xml"`.** Without both,
+  Chrome deprioritises an SVG favicon and falls back to `/favicon.ico`, which 404s on
+  this host, so the browser keeps showing whatever it had cached for the domain. That
+  is what made `/LocalPulse/` show a stale icon. The link now matches the theme's own
+  declaration exactly, version string included, so the whole domain shares one cache
+  entry. Favicons cache hard: a hard reload may be needed to see the change.
 - **The URL is case-sensitive.** `/LocalPulse/` works, `/localpulse/` 404s. Say the
   word if you want a lowercase alias.
 - **It carries `noindex, nofollow`**, on the same reasoning as `/v2/`: illustrative
