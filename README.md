@@ -100,6 +100,48 @@ Two things the snapshot cannot carry, both expected:
 Delete the whole thing with one `rm -r` of `v2/` on the server when it has served
 its purpose. Nothing else references it.
 
+## `site/LocalPulse/` — the LocalPulse prototype
+
+A working prototype at **ferratalabs.ai/LocalPulse/**, re-themed so it reads as a
+Ferrata agent rather than a separate product. One self-contained HTML file: sign-in,
+eleven screens, publish sheet, notifications drawer, all interactive.
+
+Built from an untouched source by a script, both committed, neither served:
+
+```
+prototypes/localpulse-prototype-v3.html   the original, unmodified
+scripts/build-localpulse.py               the transform
+python3 scripts/build-localpulse.py site/LocalPulse/index.html
+```
+
+**Behaviour is untouched.** The script rewrites the theme layer, the brand lockup
+and the copy; it never edits screen markup and never touches the script block. The
+JS is byte-identical apart from punctuation. Re-run the script rather than editing
+`site/LocalPulse/index.html`, or the next build discards the edit.
+
+What the transform does, all of it §4 and §7:
+
+- Remaps the palette to warm monochrome, and **deletes the dark theme** rather than
+  overriding it, because §4 is light-theme only
+- Radius to 0 for content, pill only for badges and nav items
+- Shadows and gradients out, except the poster mocks: those are the marketing images
+  the product generates, so they are depicted content, not chrome
+- **No blue.** The Facebook, Instagram and Google glyphs were brand colours and are
+  now neutral mono initials, which also avoids implying a partnership (§8)
+- Archivo, IBM Plex Sans and IBM Plex Mono, referenced from the theme's own
+  `assets/fonts.css` rather than copied, so the prototype cannot drift from the brand
+- The app bar carries the three Ferrata levels: **Ferrata Labs → LocalPulse →
+  workspace**, matching Pledge and Sterling. The mark belongs to the first level only
+- 113 em dashes removed per §7: `·` where one separated two labels, `:` where it
+  joined a clause, `–` where it marked an empty table cell
+
+Two things worth knowing:
+
+- **The URL is case-sensitive.** `/LocalPulse/` works, `/localpulse/` 404s. Say the
+  word if you want a lowercase alias.
+- **It carries `noindex, nofollow`**, on the same reasoning as `/v2/`: illustrative
+  data on the live domain should not be in search results.
+
 ## The two legitimately diverge
 
 Not drift to be fixed:
