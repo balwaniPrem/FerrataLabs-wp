@@ -1,0 +1,78 @@
+{
+ "home": {
+  "title": "Ferrata Labs. Enterprise AI agents that do the actual work",
+  "desc": "Ferrata Labs designs, builds and runs AI agents that do the actual work inside enterprise operations. Built to your business, not off a shelf."
+ },
+ "work": {
+  "title": "The work. Ferrata Labs",
+  "desc": "Agents Ferrata Labs has shipped, and how every deployment gets personalized to your organization."
+ },
+ "how-it-works": {
+  "title": "How it works. Ferrata Labs",
+  "desc": "The Ferrata Labs engagement model: assess, anchor the platform, first agent live, expand and hand over, all run on a disciplined Agent Development Lifecycle."
+ },
+ "about": {
+  "title": "Who we are. Ferrata Labs",
+  "desc": "Ferrata Labs is run by operators who scaled a regulated B2B platform from $75M to $1.2B and put AI into production inside it."
+ },
+ "contact": {
+  "title": "Book a discovery call. Ferrata Labs",
+  "desc": "Thirty minutes, no deck. Bring one workflow and we'll pressure-test whether an agent is the right answer."
+ },
+ "pledge": {
+  "title": "Pledge",
+  "desc": ""
+ },
+ "agents-sterling": {
+  "title": "Sterling, Working capital. Ferrata Labs",
+  "desc": "Reads receivables and payables from the ERP, narrates the cash position daily, and drafts collection sequences ranked by recovery odds."
+ },
+ "agents-clark": {
+  "title": "Clark, Payables. Ferrata Labs",
+  "desc": "Extracts vendor invoices from any format and posts the payable straight into SAP or NetSuite, with duplicate detection before anything is released."
+ },
+ "agents-tally": {
+  "title": "Tally, Reconciliation. Ferrata Labs",
+  "desc": "Balances sub-ledgers to the GL line by line and hands back a clean exception list instead of a spreadsheet nobody wants to open."
+ },
+ "agents-chandler": {
+  "title": "Chandler, Procurement. Ferrata Labs",
+  "desc": "Runs RFQ to PO with multi-vendor negotiation across email, SMS and voice, then holds suppliers to the pricing schedule they agreed to."
+ },
+ "agents-swift": {
+  "title": "Swift, Order management. Ferrata Labs",
+  "desc": "Turns inbound customer purchase order PDFs into clean sales orders in minutes rather than days, flagging only what genuinely needs a decision."
+ },
+ "agents-quill": {
+  "title": "Quill, Quotes & CRM. Ferrata Labs",
+  "desc": "Reads every inbound enquiry, prices it against your rules, and drafts the quote in your CRM so a rep is editing rather than starting cold."
+ },
+ "industries-financial-services": {
+  "title": "Financial services. Ferrata Labs",
+  "desc": "Regulated finance operations where the reconciliation burden is heavy, the audit trail is not optional, and an unexplained break is a control finding rather than an inconvenience."
+ },
+ "industries-food-and-beverage": {
+  "title": "Food & beverage. Ferrata Labs",
+  "desc": "Thin margins and high transaction counts, where input prices move weekly and a small percentage of unnoticed price drift is the whole year's profit."
+ },
+ "industries-construction": {
+  "title": "Construction. Ferrata Labs",
+  "desc": "Project-based work where every job has its own commercial terms, and the paperwork between a variation being agreed on site and it being billed is where the margin leaks."
+ },
+ "industries-manufacturing": {
+  "title": "Manufacturing. Ferrata Labs",
+  "desc": "Where the order book arrives as PDFs in a dozen customer formats and the payables function lives or dies on the three-way match."
+ },
+ "industries-venture-and-private-capital": {
+  "title": "Venture & private capital. Ferrata Labs",
+  "desc": "Small operating teams carrying a disproportionate administrative load across funds, vehicles and portfolio companies, where the constraint is people, not systems."
+ },
+ "industries-logistics-and-supply-chain": {
+  "title": "Logistics & supply chain. Ferrata Labs",
+  "desc": "Enormous invoice volume at low unit value, where rates are contractual, accessorial charges are where the money hides, and nobody has time to check every line."
+ },
+ "thank-you": {
+  "title": "Thank you. Ferrata Labs",
+  "desc": "Your discovery call request has been received. We come back within one business day."
+ }
+}

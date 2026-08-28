@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>LocalPulse · Ferrata Labs</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/wp-content/themes/ferrata-labs/assets/icon.svg?ver=1.1.3" sizes="any" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/wp-content/themes/ferrata-labs/assets/apple-icon.png?ver=1.1.3" sizes="180x180" type="image/png">
+<!-- The same self-hosted faces the live site uses, referenced rather than copied
+     so this prototype cannot drift from the brand. -->
+<link rel="stylesheet" href="/wp-content/themes/ferrata-labs/assets/fonts.css">
+<style>
+:root{
+  /* Ferrata Labs design system, CLAUDE.md §4. Warm monochrome on one grey family,
+     black as the primary accent, and iron oxide rationed to the small mono labels
+     that number or name a thing. Light theme only: the dark palette the prototype
+     shipped with is gone rather than overridden, because §4 permits one theme. */
+  --bg:#F7F6F3; --surface:#FFFFFF; --surface-2:#F7F6F3; --surface-3:#F1EFEB;
+  --line:#E8E6E1; --line-strong:#D8D5CF;
+  --ink:#111111; --ink-2:#37352F; --ink-3:#6B6862;
+  --accent:#111111; --accent-ink:#FFFFFF; --accent-soft:#F1EFEB; --accent-line:#D8D5CF;
+  --advisory:#A34A32; --advisory-soft:#FBF3F0; --advisory-line:#E6CFC7;
+  --ok:#346538; --ok-soft:#EDF3EC;
+  --warn:#7A5C14; --warn-soft:#FBF6E9;
+  --crit:#8F2F2D; --crit-soft:#FBECEC;
+  /* the prototype used violet for the avatar; there is no purple in the system */
+  --violet:#6B6862; --violet-soft:#F1EFEB;
+  /* §4 forbids shadows. Separation is carried by hairlines instead. */
+  --shadow:none; --shadow-lift:none;
+  --font-ui:"IBM Plex Sans","IBM Plex Sans Fallback",system-ui,sans-serif;
+  --font-display:Archivo,"Archivo Fallback",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono","IBM Plex Mono Fallback",ui-monospace,monospace;
+  /* content is sharp, chrome is pill */
+  --r-card:0; --r-ctl:0; --r-chip:0; --r-pill:999px;
+  --rail:224px; --topbar:58px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.num{font-family:var(--font-display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.muted{color:var(--ink-2)}
+.dim{color:var(--ink-3)}
+
+/* ── shell ───────────────────────────────── */
+.app{display:none;min-height:100vh}
+.app.on{display:block}
+.rail{position:fixed;inset:var(--topbar) auto 0 0;width:var(--rail);background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40}
+.brand{display:flex;align-items:center;gap:9px;height:var(--topbar);padding:0 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
+
+.mark::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--surface)}
+.mark::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--accent-line);animation:pulse 3.2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:0}40%{opacity:.9}100%{transform:scale(1.35);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mark::before{animation:none;opacity:.5}}
+.brand b{font-family:var(--font-display);font-size:16.5px;font-weight:600;letter-spacing:-.015em}
+.nav{padding:10px 8px;overflow-y:auto;flex:1 1 auto;display:flex;flex-direction:column;gap:1px}
+.navgrp{padding:14px 8px 5px}
+.nav a{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r-ctl);color:var(--ink-2);font-size:13.5px;font-weight:500}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.sel{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav svg{width:15px;height:15px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav .cnt{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;background:var(--advisory);color:#fff;border-radius:9px;padding:1px 6px}
+body.role-marketer .admin-only{display:none}
+.railfoot{border-top:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.spend{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-ctl);padding:9px 10px}
+.meter{height:4px;border-radius:3px;background:var(--surface-3);overflow:hidden;margin-top:7px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter.hot i{background:var(--warn)}
+
+.appbar{position:fixed;top:0;left:0;right:0;height:var(--topbar);background:rgba(255,255,255,.86);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:13px;padding:0 16px;z-index:45}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)}
+.crumb b{color:var(--ink);font-weight:600}
+.spacer{flex:1}
+.iconbtn{width:31px;height:31px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);cursor:pointer;position:relative}
+.iconbtn:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.iconbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn .dot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--advisory);border:1.5px solid var(--surface)}
+.who{display:flex;align-items:center;gap:8px;padding:3px 4px 3px 8px;border:1px solid var(--line);border-radius:20px;background:var(--surface);cursor:pointer}
+.avi{width:23px;height:23px;border-radius:50%;background:var(--violet-soft);color:var(--violet);display:grid;place-items:center;font-size:10.5px;font-weight:700}
+.main{margin-left:var(--rail);padding:calc(var(--topbar) + 22px) 26px 64px;max-width:1420px}
+.screen{display:none}
+.screen.on{display:block;animation:fade .22s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+
+/* ── primitives ──────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+.chead{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.chead h3{font-size:13.5px}
+.grid{display:grid;gap:16px}
+.row{display:flex;gap:10px;align-items:center}
+.wrap{flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:var(--r-ctl);border:1px solid var(--line-strong);background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:2.5px 7px;border-radius:var(--r-chip);border:1px solid transparent;white-space:nowrap}
+.pill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.pill.draft{background:var(--surface-3);color:var(--ink-2)}
+.pill.appr{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+.pill.live{background:var(--ok-soft);color:var(--ok)}
+.pill.fail{background:var(--crit-soft);color:var(--crit)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.sig{background:var(--advisory-soft);color:var(--advisory)}
+.pill.plain::before{display:none}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 7px;border-radius:var(--r-chip);background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+.tscroll{overflow-x:auto}
+th{text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface-2)}
+th.srt{cursor:pointer}
+th.srt:hover{color:var(--ink)}
+th.srt::after{content:"↕";margin-left:5px;opacity:.4}
+th.srt.up::after{content:"↑";opacity:1;color:var(--accent)}
+th.srt.dn::after{content:"↓";opacity:1;color:var(--accent)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right}
+th.n{text-align:right}
+.lk{cursor:pointer;font-weight:600;color:var(--ink)}
+.lk:hover{color:var(--accent);text-decoration:underline}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-ctl);padding:7px 10px;width:100%}
+textarea{resize:vertical;line-height:1.6}
+label.f{display:block}
+label.f>span{display:block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.hint{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+.search{position:relative}
+.search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--ink-3);fill:none;stroke-width:1.8}
+.search input{padding-left:29px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden;background:var(--surface)}
+.seg button{padding:5px 11px;border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.sel{background:var(--accent-soft);color:var(--accent)}
+.banner{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-card);border:1px solid;font-size:13px}
+.banner.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--ink)}
+.banner.crit{background:var(--crit-soft);border-color:var(--crit);color:var(--ink)}
+.banner.info{background:var(--accent-soft);border-color:var(--accent-line);color:var(--ink)}
+.banner svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
+.empty b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+.sk{background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);background-size:220% 100%;animation:sh 1.3s linear infinite;border-radius:4px;height:11px}
+@keyframes sh{to{background-position:-220% 0}}
+
+/* ── page head ───────────────────────────── */
+.phead{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.phead h1{font-size:23px}
+.phead .sub{color:var(--ink-2);font-size:13.5px;margin-top:3px}
+.phead .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── kpi strip ───────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:0;border:1px solid var(--line);border-radius:var(--r-card);background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.kpi{padding:14px 16px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi .v{font-family:var(--font-display);font-size:29px;line-height:1.1;letter-spacing:-.025em;margin:6px 0 3px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.kpi .up{color:var(--ok);font-weight:600}
+.kpi .dn{color:var(--crit);font-weight:600}
+
+/* ── snapshot / signals ──────────────────── */
+.sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.sig-col{border-right:1px solid var(--line);padding:14px 16px;min-width:0}
+.sig-col:last-child{border-right:0}
+.sig-col h4{font-size:12px;display:flex;align-items:center;gap:7px;margin-bottom:11px}
+.sig-col h4 svg{width:14px;height:14px;stroke:var(--advisory);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wx{display:flex;align-items:baseline;gap:9px}
+.wx .t{font-family:var(--font-display);font-size:34px;letter-spacing:-.03em;line-height:1}
+.wx .c{font-size:12.5px;color:var(--ink-2)}
+.fc{display:flex;gap:2px;margin-top:12px}
+.fc div{flex:1;text-align:center;padding:6px 2px;border-radius:var(--r-chip);background:var(--surface-2);font-size:10.5px;color:var(--ink-2)}
+.fc div b{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--ink);margin-top:2px}
+.fc div.hot{background:var(--advisory-soft);color:var(--advisory)}
+.fc div.hot b{color:var(--advisory)}
+.itm{display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line)}
+.itm:first-of-type{border-top:0;padding-top:0}
+.itm .when{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);width:44px;flex:0 0 auto;padding-top:2px}
+.itm .ttl{font-size:12.5px;font-weight:600;line-height:1.35}
+.itm .meta{font-size:11px;color:var(--ink-3);margin-top:2px}
+.srcbar{display:flex;gap:14px;padding:9px 16px;border-top:1px solid var(--line);background:var(--surface-2);font-size:11.5px;color:var(--ink-3);flex-wrap:wrap;align-items:center}
+.srcbar .s{display:flex;align-items:center;gap:5px}
+.srcbar .s i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.srcbar .s.bad i{background:var(--crit)}
+.srcbar .s.part i{background:var(--warn)}
+
+/* ── poster mock ─────────────────────────── */
+.poster{position:relative;aspect-ratio:1;border-radius:5px;overflow:hidden;background:#20211f;isolation:isolate;user-select:none}
+.poster.port{aspect-ratio:4/5}
+.poster .lay{position:absolute;inset:0}
+.p-heat{background:radial-gradient(120% 90% at 72% 18%,#FFD873 0%,#F79A3C 34%,#DD5B2A 64%,#9E2F22 100%)}
+.p-beach{background:linear-gradient(#5FC7E8 0%,#9FE0EA 44%,#F6DFA8 62%,#E9C377 100%)}
+.p-fest{background:radial-gradient(90% 70% at 30% 80%,#3B2E68 0%,#1C1B3A 55%,#0E0E22 100%)}
+.p-dusk{background:linear-gradient(#2C3E63 0%,#7A4C6B 48%,#E0784C 78%,#F5B25C 100%)}
+.p-sun{position:absolute;width:34%;aspect-ratio:1;border-radius:50%;right:10%;top:10%;background:radial-gradient(circle,#FFF9E6 0%,#FFEFB6 28%,#FFD972 44%,rgba(255,203,96,.34) 58%,rgba(255,203,96,0) 74%)}
+.p-wave{position:absolute;left:-6%;right:-6%;bottom:12%;height:22%;border-radius:50% 50% 0 0 / 100% 100% 0 0;background:rgba(255,255,255,.26)}
+.p-wave.b{bottom:5%;height:18%;background:rgba(38,120,150,.3)}
+.p-road{background:linear-gradient(#7FB2D9 0%,#C9DCE8 34%,#B8B0A4 46%,#5A5650 55%,#3A3733 74%,#26241F 100%)}
+.p-lane{position:absolute;left:50%;bottom:0;width:4.5%;height:52%;transform:translateX(-50%) perspective(240px) rotateX(58deg);transform-origin:bottom;background:repeating-linear-gradient(180deg,#F2D268 0 14%,transparent 14% 30%)}
+.p-shoulder{position:absolute;bottom:0;height:52%;width:2%;background:rgba(255,255,255,.55)}
+.p-shoulder.l{left:16%;transform:perspective(240px) rotateX(58deg) skewX(16deg);transform-origin:bottom}
+.p-shoulder.r{right:16%;transform:perspective(240px) rotateX(58deg) skewX(-16deg);transform-origin:bottom}
+.p-bokeh{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,214,140,.9),rgba(255,180,90,0) 70%)}
+.p-grain{background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:4px 4px;opacity:.35;mix-blend-mode:overlay}
+.p-vig{background:radial-gradient(120% 100% at 50% 0%,transparent 40%,rgba(0,0,0,.4) 100%)}
+.p-scrim{background:linear-gradient(transparent 38%,rgba(14,22,26,.52) 100%)}
+.p-txt{position:absolute;left:8%;right:8%;bottom:9%;color:#fff;text-shadow:0 1px 14px rgba(0,0,0,.35)}
+.p-txt .kick{font-family:var(--font-mono);font-size:clamp(7px,1.35cqw,12px);letter-spacing:.22em;text-transform:uppercase;opacity:.9}
+.p-txt .hl{font-family:var(--font-display);font-weight:600;font-size:clamp(20px,7.4cqw,64px);line-height:.94;letter-spacing:-.03em;margin-top:.28em}
+.p-txt .sl{font-size:clamp(8px,1.9cqw,17px);opacity:.92;margin-top:.5em}
+.p-logo{position:absolute;right:6%;bottom:6%;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.94);color:#1A2A28;border-radius:20px;padding:4px 10px 4px 5px;font-size:clamp(7px,1.5cqw,13px);font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.p-logo i{width:1.5em;height:1.5em;border-radius:50%;background:var(--ink);display:block}
+.p-logo.tl{right:auto;bottom:auto;left:6%;top:6%}
+
+/* ── studio ──────────────────────────────── */
+.studio{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+.canvas{container-type:inline-size;padding:16px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cmp .lbl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between}
+.film{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;align-items:flex-start}
+.vthumb{flex:0 0 auto;width:66px;cursor:pointer;text-align:center}
+.vthumb .poster{border:2px solid transparent;border-radius:6px}
+.vthumb.sel .poster{border-color:var(--accent)}
+.vthumb .vl{font-family:var(--font-mono);font-size:10px;color:var(--ink-3);margin-top:4px}
+.vthumb.sel .vl{color:var(--accent);font-weight:700}
+.gen{position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 78%,transparent);backdrop-filter:blur(3px);display:none;place-items:center;z-index:5;border-radius:5px}
+.gen.on{display:grid}
+.spin{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--accent-line);border-top-color:var(--accent);animation:sp .8s linear infinite;margin:0 auto 9px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chat{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-height:290px;overflow-y:auto}
+.msg{font-size:12.5px;line-height:1.5}
+.msg.u{align-self:flex-end;max-width:88%;background:var(--accent);color:var(--accent-ink);padding:7px 11px;border-radius:11px 11px 3px 11px;font-weight:500}
+.msg.s{align-self:flex-start;max-width:92%;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);padding:7px 11px;border-radius:11px 11px 11px 3px}
+.msg.s b{color:var(--ink)}
+.composer{border-top:1px solid var(--line);padding:12px 16px}
+.cap{border-top:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:10px 10px 8px;font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.sel{color:var(--accent);border-bottom-color:var(--accent)}
+.tabp{display:none;padding:14px 16px}
+.tabp.on{display:block}
+.cchk{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-top:7px}
+.why{display:flex;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+.why:first-child{border-top:0;padding-top:0}
+.why .n2{width:18px;height:18px;flex:0 0 auto;border-radius:4px;background:var(--advisory-soft);color:var(--advisory);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700}
+.why .a{font-size:12.5px;font-weight:600}
+.why .src{font-size:11px;color:var(--ink-3);margin-top:3px}
+.why .src code{font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+.statebar{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+
+/* ── publish sheet ───────────────────────── */
+.scrim{position:fixed;inset:0;background:rgba(8,14,15,.5);backdrop-filter:blur(2px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto}
+.scrim.on{display:flex}
+.sheet{width:100%;max-width:880px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lift);overflow:hidden}
+.sheet .shead{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.sheet .sbody{display:grid;grid-template-columns:308px minmax(0,1fr);gap:0}
+.sleft{border-right:1px solid var(--line);padding:16px 18px}
+.sright{padding:16px 18px;background:var(--surface-2)}
+.sfoot{display:flex;align-items:center;gap:10px;padding:13px 18px;border-top:1px solid var(--line)}
+.chan{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:var(--r-ctl);margin-bottom:8px;cursor:pointer;background:var(--surface)}
+.chan.sel{border-color:var(--accent);background:var(--accent-soft)}
+.chan.off{opacity:.55;cursor:not-allowed}
+.chan input{width:auto;margin-top:2px}
+.chan .nm{display:block;font-size:13px;font-weight:600}
+.chan .sub2{display:block;font-size:11.5px;color:var(--ink-3)}
+.glyph{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:11px;flex:0 0 auto}
+/* channel glyphs are neutral: see .glyph in the overrides */
+.pv{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;max-width:392px}
+.pv .pvh{display:flex;gap:8px;align-items:center;padding:9px 11px}
+.pv .pvh .nm{font-size:12.5px;font-weight:700}
+.pv .pvh .tm{font-size:10.5px;color:var(--ink-3)}
+.pv .pvb{font-size:12.5px;padding:0 11px 9px;line-height:1.45}
+.pv .pvf{display:flex;gap:16px;padding:8px 11px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-3)}
+.pubrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);margin-bottom:8px;background:var(--surface)}
+.pubrow .st{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* ── analytics ───────────────────────────── */
+.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.mcard{border:1px solid var(--line);border-radius:var(--r-card);padding:12px 13px;background:var(--surface)}
+.mcard .v{font-family:var(--font-display);font-size:24px;letter-spacing:-.02em;margin:5px 0 2px;font-variant-numeric:tabular-nums}
+.spark{display:block;width:100%;height:34px;margin-top:6px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:96px 1fr 62px;gap:10px;align-items:center;font-size:12.5px}
+.bar .tr{height:9px;border-radius:5px;background:var(--surface-3);overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:5px}
+.leg{display:flex;gap:14px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+.leg i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px}
+
+/* ── drawer / toast / login ──────────────── */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:376px;max-width:92vw;background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow-lift);z-index:70;transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+@media (prefers-reduced-motion:reduce){.drawer{transition:none}}
+.ntf{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ntf.new{background:var(--accent-soft)}
+.ntf .ic{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto}
+.ntf .tx{font-size:12.5px;line-height:1.45}
+.ntf .tm{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);margin-top:3px}
+.toasts{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{background:var(--surface);border:1px solid var(--line-strong);border-left:3px solid var(--accent);border-radius:var(--r-ctl);box-shadow:var(--shadow-lift);padding:10px 14px;font-size:12.5px;max-width:340px;animation:tin .22s ease-out}
+.toast.ok{border-left-color:var(--ok)}.toast.bad{border-left-color:var(--crit)}.toast.wr{border-left-color:var(--warn)}
+.toast b{display:block;margin-bottom:2px}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.login{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+.login.off{display:none}
+.lhero{padding:52px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.lhero .rings{position:absolute;right:-14%;top:24%;width:74%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.16);box-shadow:0 0 0 42px rgba(255,255,255,.055),0 0 0 96px rgba(255,255,255,.04),0 0 0 160px rgba(255,255,255,.028)}
+.lhero h2{font-family:var(--font-display);font-size:33px;line-height:1.15;letter-spacing:-.02em;max-width:15em;position:relative}
+.lhero p{color:#B8D9D6;max-width:34em;margin-top:14px;position:relative;font-size:14.5px}
+.lbrand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:19px;font-weight:600;position:relative}
+
+
+.lsigs{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.lsig{border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 11px;font-size:12px;color:#CBE6E4}
+.lform{display:grid;place-items:center;padding:40px 24px;background:var(--bg)}
+.lform .box{width:100%;max-width:330px;display:flex;flex-direction:column;gap:13px}
+.lform h1{font-size:21px}
+@media (max-width:960px){.login{grid-template-columns:1fr}.lhero{display:none}
+  .studio{grid-template-columns:1fr}.sheet .sbody{grid-template-columns:1fr}.sleft{border-right:0;border-bottom:1px solid var(--line)}
+  .sig-grid{grid-template-columns:1fr}.sig-col{border-right:0;border-bottom:1px solid var(--line)}
+  :root{--rail:0px}.rail{transform:translateX(-100%)}.rail.on{transform:none;--rail:224px;width:224px}
+  .topbar{left:0}.main{padding-left:16px;padding-right:16px}.menu{display:grid!important}}
+.menu{display:none}
+@media (min-width:961px){.mobonly{display:none!important}}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+@media (max-width:1120px){.two,.three{grid-template-columns:1fr}}
+.stack{display:flex;flex-direction:column;gap:16px}
+.kv{display:grid;grid-template-columns:132px 1fr;gap:7px 12px;font-size:13px}
+.kv .k{color:var(--ink-3);font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+
+/* ════ Ferrata Labs overrides ═══════════════════════════════════════════
+   The token block above carries most of the re-theme. What is left is the
+   structural half of §4: radius, shadow, gradient and the absence of blue.
+   Nothing here changes behaviour. */
+
+/* Type. Archivo for display and figures, Plex Sans for copy, Plex Mono for
+   labels. Headings are 800 at display size per §4. */
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;letter-spacing:-.02em}
+.phead h1,.lform h1{font-weight:800;letter-spacing:-.03em}
+.num,.kpi .v,.mcard .v,.wx .t,.p-txt .hl{font-family:var(--font-display);font-weight:800}
+body{font-family:var(--font-ui)}
+
+/* Links are ink, not a coloured accent. */
+a{color:var(--ink)}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:0}
+
+/* Radius. Content is sharp; only floating chrome and small status objects
+   are pill. A rounded element that is neither is a bug (§4). */
+.pill,.tag,.cnt,.nav .cnt,.who,.lsig,.nav a{border-radius:var(--r-pill)}
+.pill::before{border-radius:0}
+.msg.u,.msg.s{border-radius:0}
+.poster,.vthumb .poster,.gen,.sheet,.pv,.avi,.glyph,.ntf .ic,.why .n2,
+.meter,.meter i,.bar .tr,.bar .tr i,.leg i,.sk,.iconbtn,.toast,.spend{border-radius:0}
+/* A rotating square rather than a ring: rotated squares are in the icon
+   vocabulary, round caps are not. */
+.spin{border-radius:0;border-color:var(--line);border-top-color:var(--ink)}
+
+/* Shadow and blur. The app bar keeps the one permitted blur; nothing else does. */
+.card,.kpis,.sheet,.drawer,.toast{box-shadow:none}
+.gen{background:rgba(255,255,255,.86);backdrop-filter:none}
+.scrim{background:rgba(17,17,17,.42);backdrop-filter:none}
+
+/* Gradients out. The skeleton loses its shimmer and becomes a flat tint. */
+.sk{background:var(--surface-3);animation:none}
+
+/* No blue anywhere. The channel glyphs were Facebook blue, an Instagram
+   gradient and Google blue; they are now neutral mono initials, which also
+   avoids implying a partnership or certification (§8). */
+.glyph{background:var(--surface-3)!important;color:var(--ink-2);border:1px solid var(--line);font-family:var(--font-mono);font-weight:500;font-size:9px;letter-spacing:.04em}
+
+/* Status dots are square. */
+.srcbar .s i,.iconbtn .dot{border-radius:0}
+.avi{background:var(--surface-3);color:var(--ink-2);font-family:var(--font-mono);font-weight:500}
+
+/* Rail. Matches the product rail: hairline items, ink fill when active. */
+.nav a.sel{background:var(--ink);color:#fff;font-weight:600}
+.nav a.sel svg{color:#fff;stroke:#fff}
+.nav .cnt{background:var(--advisory-soft);color:var(--advisory);border:1px solid var(--advisory-line);font-weight:500}
+
+/* Tabs and segmented controls read in ink rather than a colour. */
+.tabs button.sel{color:var(--ink);border-bottom-color:var(--ink)}
+.seg button.sel{background:var(--ink);color:#fff}
+.vthumb.sel .poster{border-color:var(--ink)}
+.vthumb.sel .vl{color:var(--ink)}
+.chan.sel{border-color:var(--ink);background:var(--surface-2)}
+.banner.info{background:var(--surface-2);border-color:var(--line-strong)}
+.toast{border-left-color:var(--ink)}
+
+/* ── the three-level app bar ─────────────────────────────────────────── */
+.lvl{display:flex;align-items:center;gap:9px}
+.lvl.brand{font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.lvl.brand:hover{text-decoration:none}
+.lvl.brand svg{flex:0 0 auto}
+.lvl.product{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-.01em;color:var(--ink)}
+.lvl.ws{flex-direction:column;align-items:flex-start;gap:0}
+.lvl.ws .ws-name{font-family:var(--font-ui);font-weight:600;font-size:13px;color:var(--ink);line-height:1.25}
+.lvl.ws .ws-meta{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.lvl-sep{width:1px;height:22px;background:var(--line);flex:0 0 auto}
+/* Ink on a warm wash, matching .chip in the Ferrata product chrome exactly.
+   Oxide is left to the rail counts, which are the one place on this screen that
+   §4's "small mono labels that number a thing" applies. */
+.chip{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-pill);padding:3px 10px}
+.who .wn{font-size:12.5px;font-weight:600}
+.who .pill.plain{background:var(--surface-2);color:var(--ink-3);border-color:var(--line)}
+
+/* The breadcrumb sits with the content now that the bar carries the brand. */
+.main>.crumb{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.main>.crumb b{font-weight:500;color:var(--ink-2)}
+@media (max-width:860px){.hide-sm{display:none!important}}
+
+/* ── sign-in ─────────────────────────────────────────────────────────── */
+.lhero{background:var(--bg);color:var(--ink);border-right:1px solid var(--line)}
+.lhero h2{font-family:var(--font-display);font-weight:800;font-size:33px;letter-spacing:-.03em;color:var(--ink)}
+.lhero p{color:var(--ink-2)}
+.lbrand{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);gap:10px}
+.lbrand b{font-weight:600;font-size:16px;letter-spacing:-.01em;text-transform:none}
+.lsig{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:var(--r-pill)}
+.lform{background:var(--surface)}
+</style>
+
+<!-- ══ SIGN IN ══════════════════════════════════════════ -->
+<div class="login" id="login">
+  <div class="lhero">
+    <div class="lbrand"><svg width="22" height="22" viewBox="0 0 48 48" role="img" aria-label="Ferrata Labs"><rect width="48" height="48" fill="var(--ink)"/><g transform="translate(8,8)" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="square" fill="none"><path d="M4 27 V5"/><path d="M4 23 H20"/><path d="M4 16 H26"/><path d="M4 9 H16"/></g></svg><span>Ferrata Labs</span><span class="lvl-sep" aria-hidden="true"></span><b>LocalPulse</b></div>
+    <div>
+      <h2>Every store gets marketing that knows what&rsquo;s happening on the roads outside its own bay doors.</h2>
+      <p>Weekly hyperlocal signals within 50 miles of each ZIP &rarr; brand-safe angles &rarr; approved collateral live on Facebook, Instagram and Google Business Profile in one click.</p>
+    </div>
+    <div class="lsigs">
+      <span class="lsig">Weather &amp; alerts</span><span class="lsig">Local events</span><span class="lsig">Regional news</span><span class="lsig">Brand-safety filter</span><span class="lsig">Human approval</span>
+    </div>
+  </div>
+  <div class="lform">
+    <div class="box">
+      <div>
+        <div class="eyebrow">Sunspot Tire Company &middot; corporate marketing</div>
+        <h1 style="margin-top:6px">Sign in to LocalPulse</h1>
+      </div>
+      <label class="f"><span>Work email</span><input type="email" value="dana.whitfield@sunspottirecompany.com"></label>
+      <label class="f"><span>Password</span><input type="password" value="••••••••••••"></label>
+      <label class="f"><span>Sign in as (prototype)</span>
+        <select id="roleSel"><option value="admin">Admin · Dana Whitfield</option><option value="marketer">Marketer · Priya Raman</option></select>
+        <div class="hint">Role changes what the left rail and destructive actions expose (RBAC, M1).</div>
+      </label>
+      <button class="btn pri" style="justify-content:center;padding:9px" onclick="signIn()">Sign in</button>
+      <div class="row" style="justify-content:space-between"><a href="#" onclick="return false">Forgot password</a><span class="dim" style="font-size:12px">SSO parked for v2</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════ -->
+<div class="app" id="app">
+<aside class="rail" id="rail">
+  <nav class="nav">
+    <div class="navgrp eyebrow">Workspace</div>
+    <a data-s="overview" class="sel" onclick="go('overview')"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg>Overview</a>
+    <a data-s="franchises" onclick="go('franchises')"><svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h13l-2.5 4L17 12H4"/></svg>Campaigns<span class="cnt">7</span></a>
+    <a data-s="drafts" onclick="go('drafts')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-4 4 3 3-3 6 5"/><circle cx="9" cy="8.5" r="1.5"/></svg>Collateral<span class="cnt">6</span></a>
+    <a data-s="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l4-6 3 3 4-7"/></svg>Analytics</a>
+    <div class="navgrp eyebrow admin-only">Operations</div>
+    <a data-s="jobs" class="admin-only" onclick="go('jobs')"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Cycle monitor</a>
+    <a data-s="connections" class="admin-only" onclick="go('connections')"><svg viewBox="0 0 24 24"><path d="M9 15l6-6M8 8l-2 2a4 4 0 005.7 5.7l1-1M16 16l2-2a4 4 0 00-5.7-5.7l-1 1"/></svg>Connections<span class="cnt">1</span></a>
+    <a data-s="settings" class="admin-only" onclick="go('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1A1.6 1.6 0 006.5 19l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 13.6H3a2 2 0 110-4h.1A1.6 1.6 0 004.6 7L4.5 7a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 0010 3.1V3a2 2 0 114 0v.1a1.6 1.6 0 002.7 1.1l.1-.1a2 2 0 112.8 2.8l-.1.1A1.6 1.6 0 0021 9.4h.1a2 2 0 110 4H21a1.6 1.6 0 00-1.6 1.6z"/></svg>Settings</a>
+    <a data-s="users" class="admin-only" onclick="go('users')"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20a6.5 6.5 0 0113 0M17 11.2A3 3 0 0017 5M18.5 20a5.4 5.4 0 00-2-4.2"/></svg>Users &amp; roles</a>
+    <a data-s="audit" class="admin-only" onclick="go('audit')"><svg viewBox="0 0 24 24"><path d="M14 3v5h5M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8zM8 13h8M8 17h5"/></svg>Audit log</a>
+  </nav>
+  <div class="railfoot">
+    <div class="spend">
+      <div class="row" style="justify-content:space-between"><span class="eyebrow">Generation spend</span><span class="mono" style="font-size:11px">Aug</span></div>
+      <div class="row" style="justify-content:space-between;margin-top:3px"><b class="mono" style="font-size:13px">$412.80</b><span class="dim" style="font-size:11.5px">of $600 cap</span></div>
+      <div class="meter"><i style="width:69%"></i></div>
+    </div>
+  </div>
+</aside>
+
+<header class="appbar">
+  <button class="iconbtn menu mobonly" onclick="document.getElementById('rail').classList.toggle('on')" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <a class="lvl brand" href="https://ferratalabs.ai" title="Ferrata Labs"><svg width="20" height="20" viewBox="0 0 48 48" role="img" aria-label="Ferrata Labs"><rect width="48" height="48" fill="var(--ink)"/><g transform="translate(8,8)" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="square" fill="none"><path d="M4 27 V5"/><path d="M4 23 H20"/><path d="M4 16 H26"/><path d="M4 9 H16"/></g></svg><span>Ferrata Labs</span></a>
+  <span class="lvl-sep" aria-hidden="true"></span>
+  <span class="lvl product">LocalPulse</span>
+  <span class="lvl-sep hide-sm" aria-hidden="true"></span>
+  <span class="lvl ws hide-sm"><span class="ws-name">Sunspot Tire Company</span><span class="ws-meta">47 locations · Meta · GBP</span></span>
+  <div class="spacer"></div>
+  <span class="chip hide-sm">Illustrative data</span>
+  <button class="iconbtn" onclick="document.getElementById('drawer').classList.toggle('on')" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 6-2 7-2 7h16s-2-1-2-7M13.7 20a2 2 0 01-3.4 0"/></svg><span class="dot"></span></button>
+  <button class="who" onclick="go('users')"><span class="avi" id="avi">DW</span><span class="wn" id="uname">Dana</span><span class="pill plain" id="urole">Admin</span></button>
+</header>
+
+<main class="main">
+<div class="crumb"><b id="crumb">Overview</b><span id="crumb2"></span></div>
+
+<!-- ══ OVERVIEW ═════════════════════════════════════════ -->
+<section class="screen on" id="s-overview">
+  <div class="phead">
+    <div>
+      <div class="eyebrow">Wed 21 Aug 2026 &middot; 7 campaigns &middot; 47 locations &middot; 12 regions</div>
+      <h1>Campaign overview</h1>
+      <div class="sub">Weekly cycles ran overnight across every campaign. Six drafts are waiting on a human before anything goes live.</div>
+    </div>
+    <div class="acts">
+      <button class="btn" onclick="go('jobs')"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Cycle monitor</button>
+      <button class="btn pri" onclick="go('drafts')">Review 6 drafts</button>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="kpis">
+      <div class="kpi"><div class="eyebrow">Awaiting review</div><div class="v">6</div><div class="d">Oldest waiting <b class="mono">2d 4h</b></div></div>
+      <div class="kpi"><div class="eyebrow">Live posts · 30d</div><div class="v">172</div><div class="d"><span class="up">+14</span> vs prior 30d</div></div>
+      <div class="kpi"><div class="eyebrow">Engagement · 30d</div><div class="v">41.2K</div><div class="d"><span class="up">+8.4%</span> reach-weighted</div></div>
+      <div class="kpi"><div class="eyebrow">Cycle success</div><div class="v">96%</div><div class="d">45 of 47 locations last cycle</div></div>
+      <div class="kpi"><div class="eyebrow">Spend · Aug</div><div class="v">$413</div><div class="d">69% of $600 cap</div></div>
+    </div>
+
+    <div class="card">
+      <div class="chead">
+        <h3>All campaigns</h3>
+        <span class="spacer"></span>
+        <div class="seg"><button class="sel">All</button><button>New drafts</button><button>Failed cycles</button><button>Paused</button></div>
+        <button class="btn sm" onclick="toast('ok','Export queued','campaigns-overview-2026-08-21.csv will download when ready.')"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>CSV</button>
+      </div>
+      <div class="tscroll">
+      <table id="ovTable">
+        <thead><tr>
+          <th class="srt" onclick="sortT(this,0,'t')">Campaign</th>
+          <th class="srt" onclick="sortT(this,1,'t')">Locations</th>
+          <th class="srt" onclick="sortT(this,2,'t')">Last cycle</th>
+          <th>Signals</th>
+          <th class="srt n" onclick="sortT(this,4,'n')">Drafts</th>
+          <th class="srt n" onclick="sortT(this,5,'n')">Live 30d</th>
+          <th class="srt n" onclick="sortT(this,6,'n')">Engagement 30d</th>
+          <th>Next cycle</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="lk" onclick="go('franchise')">Gulf Coast road readiness</span><div class="dim" style="font-size:11px">3 locations · Southeast</div></td><td><b>3</b><div class="dim" style="font-size:11px">Tampa · St. Pete · Sarasota</div></td><td><span class="pill live">Ok</span><div class="dim mono" style="font-size:11px">20 Aug 09:04</div></td><td><span class="tag">3 of 3</span></td><td class="n">1</td><td class="n">12</td><td class="n">9,842</td><td class="mono dim">27 Aug 09:00</td></tr>
+          <tr><td><span class="lk" onclick="go('franchise')">Phoenix heat watch</span><div class="dim" style="font-size:11px">1 location · Southwest</div></td><td><b>1</b><div class="dim" style="font-size:11px">Phoenix · Arcadia</div></td><td><span class="pill live">Ok</span><div class="dim mono" style="font-size:11px">20 Aug 08:12</div></td><td><span class="tag">3 of 3</span></td><td class="n">1</td><td class="n">5</td><td class="n">5,204</td><td class="mono dim">27 Aug 08:00</td></tr>
+          <tr><td><span class="lk" onclick="go('franchise')">Texas road trip season</span><div class="dim" style="font-size:11px">5 locations · Southwest</div></td><td><b>5</b><div class="dim" style="font-size:11px">Austin · San Antonio ×2 · Houston ×2</div></td><td><span class="pill live">Ok</span><div class="dim mono" style="font-size:11px">20 Aug 09:31</div></td><td><span class="tag">3 of 3</span></td><td class="n">1</td><td class="n">18</td><td class="n">14,470</td><td class="mono dim">27 Aug 09:00</td></tr>
+          <tr><td><span class="lk" onclick="go('franchise')">Mountain winter prep</span><div class="dim" style="font-size:11px">8 locations · Mountain</div></td><td><b>8</b><div class="dim" style="font-size:11px">Denver + 7 Front Range</div></td><td><span class="pill warn">Partial</span><div class="dim mono" style="font-size:11px">20 Aug 08:47</div></td><td><span class="tag" style="border-color:var(--warn);color:var(--warn)">2 of 3 · news</span></td><td class="n">1</td><td class="n">21</td><td class="n">12,611</td><td class="mono dim">27 Aug 08:00</td></tr>
+          <tr><td><span class="lk" onclick="go('franchise')">Nashville game days</span><div class="dim" style="font-size:11px">1 location · Southeast</div></td><td><b>1</b><div class="dim" style="font-size:11px">Nashville · The Gulch</div></td><td><span class="pill live">Ok</span><div class="dim mono" style="font-size:11px">20 Aug 09:15</div></td><td><span class="tag">3 of 3</span></td><td class="n">1</td><td class="n">4</td><td class="n">3,140</td><td class="mono dim">27 Aug 09:00</td></tr>
+          <tr><td><span class="lk" onclick="go('franchise')">Carolina neighborhood nights</span><div class="dim" style="font-size:11px">1 location · Southeast</div></td><td><b>1</b><div class="dim" style="font-size:11px">Raleigh · Glenwood</div></td><td><span class="pill live">Ok</span><div class="dim mono" style="font-size:11px">20 Aug 09:22</div></td><td><span class="tag">3 of 3</span></td><td class="n">1</td><td class="n">3</td><td class="n">2,088</td><td class="mono dim">27 Aug 09:00</td></tr>
+          <tr style="opacity:.6"><td><span class="lk" onclick="go('franchise')">Pacific Northwest tune-up</span><div class="dim" style="font-size:11px">6 locations · Northwest</div></td><td><b>6</b><div class="dim" style="font-size:11px">Boise · Portland + 4</div></td><td><span class="pill fail">Failed</span><div class="dim mono" style="font-size:11px">20 Aug 08:05</div></td><td><span class="tag" style="border-color:var(--crit);color:var(--crit)">0 of 3 · Boise</span></td><td class="n">0</td><td class="n">2</td><td class="n">1,204</td><td class="mono dim">Retry available</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="srcbar"><span>All 7 campaigns · 47 locations</span><span class="spacer"></span><a href="#" onclick="go('franchises');return false">Open campaign list →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LOCATIONS ════════════════════════════════════════ -->
+<section class="screen" id="s-franchises">
+  <div class="phead">
+    <div><div class="eyebrow">Campaign management · M2</div><h1>Campaigns</h1>
+      <div class="sub">7 campaigns across 47 locations. Cadence and channel mapping are data, not code: either can be overridden per campaign.</div></div>
+    <div class="acts">
+      <button class="btn" onclick="openLocations()"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 10-14 0c0 4.9 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Locations<span class="cnt" style="background:var(--surface-3);color:var(--ink-2)">47</span></button>
+      <button class="btn admin-only" onclick="toast('ok','CSV import','Row-level validation report shown before anything is written.')"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 7l5-5 5 5M4 21h16"/></svg>Import CSV</button>
+      <button class="btn pri admin-only" onclick="toast('ok','New campaign','Pick locations, cadence and channels: signals start on the next cycle.')">New campaign</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="pad row wrap" style="gap:10px">
+      <div class="search" style="flex:1;min-width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg><input id="locSearch" placeholder="Campaign, location or ZIP…" oninput="filterLoc()"></div>
+      <select style="width:auto" onchange="filterLoc()" id="locRegion"><option>All regions</option><option>Southeast</option><option>Southwest</option><option>Mountain</option><option>Northwest</option></select>
+      <select style="width:auto" onchange="filterLoc()" id="locStatus"><option>Any status</option><option>Active</option><option>Paused</option><option>Has new drafts</option></select>
+      <select style="width:auto"><option>Any cadence</option><option>Weekly</option><option>Bi-weekly</option></select>
+      <span class="dim" style="font-size:12px" id="locCount">7 shown</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tscroll">
+    <table>
+      <thead><tr><th>Campaign</th><th>Locations</th><th>Cadence (local tz)</th><th>Channel mapping</th><th>Status</th><th>Performance · 30d</th><th></th></tr></thead>
+      <tbody id="locBody">
+        <tr data-r="Southeast" data-st="Active"><td><span class="lk" onclick="go('franchise')">Gulf Coast road readiness</span><div class="dim" style="font-size:11.5px">Tire safety angle · heat + travel signals</div></td><td><b>3 locations</b><div class="dim" style="font-size:11.5px">Tampa · Hyde Park · St. Pete · Central Ave · Sarasota · Downtown</div></td><td>Weekly · Thu 09:00<div class="dim mono" style="font-size:11px">America/New_York</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,28 14,24 28,26 42,18 56,20 70,12 84,13 100,6" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+18.4%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Southwest" data-st="Active"><td><span class="lk" onclick="go('franchise')">Phoenix heat watch</span><div class="dim" style="font-size:11.5px">Single-location · extreme-heat tire pressure angle</div></td><td><b>1 location</b><div class="dim" style="font-size:11.5px">Phoenix · Arcadia</div></td><td>Weekly · Thu 08:00<div class="dim mono" style="font-size:11px">America/Phoenix · no DST</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,24 14,25 28,20 42,22 56,17 70,18 84,14 100,12" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+9.1%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Southwest" data-st="Active"><td><span class="lk" onclick="go('franchise')">Texas road trip season</span><div class="dim" style="font-size:11.5px">Weekend-drive + event traffic angle</div></td><td><b>5 locations</b><div class="dim" style="font-size:11.5px">Austin · South Congress · San Antonio ×2 · Houston ×2</div></td><td>Weekly · Thu 09:00<div class="dim mono" style="font-size:11px">America/Chicago</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill warn plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,26 14,22 28,23 42,17 56,19 70,13 84,14 100,9" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+12.6%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Mountain" data-st="Active"><td><span class="lk" onclick="go('franchise')">Mountain winter prep</span><div class="dim" style="font-size:11.5px">Early snow-tire and battery-check angle</div></td><td><b>8 locations</b><div class="dim" style="font-size:11.5px">Denver · Cherry Creek + 7 Front Range</div></td><td>Weekly · Thu 08:00<div class="dim mono" style="font-size:11px">America/Denver</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,20 14,21 28,18 42,20 56,17 70,18 84,16 100,15" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+4.2%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Southeast" data-st="Active"><td><span class="lk" onclick="go('franchise')">Nashville game days</span><div class="dim" style="font-size:11.5px">Single-location · Titans home schedule angle</div></td><td><b>1 location</b><div class="dim" style="font-size:11.5px">Nashville · The Gulch</div></td><td>Bi-weekly · Thu 09:00<div class="dim mono" style="font-size:11px">America/Chicago</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,30 14,24 28,26 42,18 56,20 70,10 84,12 100,4" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+21.7%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Southeast" data-st="Active"><td><span class="lk" onclick="go('franchise')">Carolina neighborhood nights</span><div class="dim" style="font-size:11.5px">Single-location · street-festival angle</div></td><td><b>1 location</b><div class="dim" style="font-size:11.5px">Raleigh · Glenwood</div></td><td>Weekly · Thu 09:00<div class="dim mono" style="font-size:11px">America/New_York</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td><span class="pill live">Active</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,24 14,20 28,22 42,16 56,18 70,14 84,15 100,11" fill="none" stroke="var(--ok)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--ok);font-weight:600">+7.9%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+        <tr data-r="Northwest" data-st="Paused"><td><span class="lk" onclick="go('franchise')">Pacific Northwest tune-up</span><div class="dim" style="font-size:11.5px">Paused after Boise cycle failure: see Cycle monitor</div></td><td><b>6 locations</b><div class="dim" style="font-size:11.5px">Boise · Downtown · Portland · Hawthorne + 4</div></td><td>Weekly · Thu 08:00<div class="dim mono" style="font-size:11px">America/Boise</div></td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill draft plain">GBP</span></td><td><span class="pill draft">Paused</span></td><td><div class="row" style="gap:8px;align-items:center"><svg class="spark" style="width:84px;height:24px" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,14 14,16 28,15 42,19 56,18 70,22 84,21 100,25" fill="none" stroke="var(--crit)" stroke-width="2"/></svg><span class="mono" style="font-size:12px;color:var(--crit);font-weight:600">−3.8%</span></div></td><td><button class="btn sm ghost" onclick="go('franchise')">Details</button></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="srcbar">
+      <span class="s"><i></i>All locations mapped &amp; healthy</span>
+      <span class="s part"><i></i>Some locations: token expiring</span>
+      <span class="s bad" style="color:var(--ink-3)"><i style="background:var(--line-strong)"></i>Not mapped: that channel is skipped at publish for that location, the rest still go</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FRANCHISE DETAIL ═════════════════════════════════ -->
+<section class="screen" id="s-franchise">
+  <div class="phead">
+    <div>
+      <div class="eyebrow">Campaign · 3 locations · 4 ZIPs · Southeast · America/New_York</div>
+      <h1>Gulf Coast road readiness</h1>
+      <div class="sub">Cycle ran <b>20 Aug at 09:04</b>: all three signal sources returned for every location. One draft is waiting for review.</div>
+      <div class="row" style="gap:6px;margin-top:9px;flex-wrap:wrap">
+        <span class="pill plain" style="background:var(--surface-2)">Tampa · Hyde Park · 33606</span>
+        <span class="pill plain" style="background:var(--surface-2)">St. Pete · Central Ave · 33701</span>
+        <span class="pill plain" style="background:var(--surface-2)">Sarasota · Downtown · 34236</span>
+        <button class="btn sm ghost" onclick="openLocations()" style="padding:2px 9px">Manage</button>
+      </div>
+    </div>
+    <div class="acts">
+      <button class="btn admin-only" onclick="runNow('Gulf Coast road readiness')"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>Run cycle now</button>
+      <button class="btn admin-only">Edit campaign</button>
+      <button class="btn pri" onclick="go('draft')">Open draft</button>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <div class="chead">
+        <h3>Campaign snapshot</h3><span class="pill plain" style="background:var(--surface-2);color:var(--ink-3)">v14</span>
+        <span class="spacer"></span>
+        <span class="dim mono" style="font-size:11.5px">as of 20 Aug 09:04 ET</span>
+        <button class="btn sm ghost" onclick="toast('ok','Snapshot history','Every cycle&rsquo;s snapshot is retained for grounding and audit.')">History</button>
+      </div>
+      <div class="sig-grid">
+        <div class="sig-col">
+          <h4><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>Weather · NWS</h4>
+          <div class="wx"><span class="t">94&deg;</span><span class="c">Feels 99&deg; · humid, sun breaking through<div class="dim" style="font-size:11px;margin-top:2px">Shown: Tampa · Hyde Park · hottest of the 3 locations</div></span></div>
+          <div class="fc">
+            <div><span>Thu</span><b>92</b></div><div><span>Fri</span><b>95</b></div>
+            <div class="hot"><span>Sat</span><b>99</b></div><div class="hot"><span>Sun</span><b>98</b></div>
+            <div><span>Mon</span><b>93</b></div><div><span>Tue</span><b>90</b></div><div><span>Wed</span><b>88</b></div>
+          </div>
+          <div style="margin-top:11px"><span class="pill sig">Heat advisory · Sat–Sun</span></div>
+          <div class="hint">Heat index above 100&deg;F expected Saturday afternoon.</div>
+        </div>
+        <div class="sig-col">
+          <h4><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Events · 14 across 3 locations</h4>
+          <div class="itm"><div class="when">Sat 23</div><div><div class="ttl">Gasparilla Music Festival: day one</div><div class="meta">Curtis Hixon Park · 1.9 mi · Music / festival · <b>Tampa</b></div></div></div>
+          <div class="itm"><div class="when">Sat 23</div><div><div class="ttl">Rays vs. Orioles</div><div class="meta">Tropicana Field · 3.1 mi · Sports · <b>St. Pete</b></div></div></div>
+          <div class="itm"><div class="when">Sun 24</div><div><div class="ttl">Hyde Park Sunday Market</div><div class="meta">Hyde Park Village · 0.4 mi · Community · <b>Tampa</b></div></div></div>
+          <div class="itm"><div class="when">Sun 24</div><div><div class="ttl">Farmers&rsquo; Market at the Bay</div><div class="meta">Bayfront Park · 0.8 mi · Community · <b>Sarasota</b></div></div></div>
+          <div class="itm"><div class="when">Wed 27</div><div><div class="ttl">Riverwalk Movie Night</div><div class="meta">Water Works Park · 2.2 mi · Community · <b>Tampa</b></div></div></div>
+          <div class="hint">9 more · deduped across overlapping radii (Tampa ↔ St. Pete)</div>
+        </div>
+        <div class="sig-col">
+          <h4><svg viewBox="0 0 24 24"><path d="M4 5h13a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2zM8 9h7M8 13h5"/></svg>News · top 6 of 63 across 3 locations</h4>
+          <div class="itm"><div class="when">19 Aug</div><div><div class="ttl">Riverwalk extension opens ahead of schedule</div><div class="meta">Tampa Bay Times · Local development · <b>Tampa</b></div></div></div>
+          <div class="itm"><div class="when">18 Aug</div><div><div class="ttl">Hyde Park Village adds Sunday market hours</div><div class="meta">Creative Loafing · Community · <b>Tampa</b></div></div></div>
+          <div class="itm"><div class="when">17 Aug</div><div><div class="ttl">Cooling centres open as heat index climbs</div><div class="meta">WFLA · Weather · <b>all 3 locations</b></div></div></div>
+          <div style="margin-top:11px"><span class="pill warn">7 items withheld by brand-safety filter</span></div>
+          <div class="hint">Crime, tragedy and political categories never reach the angle step.</div>
+        </div>
+      </div>
+      <div class="srcbar">
+        <span class="s"><i></i>Weather · NWS · 412 ms</span>
+        <span class="s"><i></i>Events · Ticketmaster + PredictHQ · 1.1 s</span>
+        <span class="s"><i></i>News · GNews · 780 ms (cached, shared across campaign locations)</span>
+        <span class="spacer"></span><span>Geocode cached indefinitely</span>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <div class="chead"><h3>Collateral</h3><span class="spacer"></span>
+          <div class="seg"><button class="sel">All</button><button>Draft</button><button>Published</button></div></div>
+        <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px">
+          <div style="cursor:pointer" onclick="go('draft')">
+            <div class="poster" style="container-type:inline-size"><div class="lay p-heat"></div><div class="lay p-sun" style="position:absolute"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">Tampa · this weekend</div><div class="hl">Beat the<br>heat</div></div></div>
+            <div class="row" style="margin-top:6px;justify-content:space-between"><span class="pill draft">Draft</span><span class="dim mono" style="font-size:10.5px">v3</span></div>
+            <div class="dim" style="font-size:11.5px">Cycle 20 Aug · heatwave + festival</div>
+          </div>
+          <div>
+            <div class="poster" style="container-type:inline-size"><div class="lay p-fest"></div><div class="p-bokeh" style="width:34%;left:12%;top:18%"></div><div class="p-bokeh" style="width:18%;left:62%;top:34%"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">St. Pete · Aug 16</div><div class="hl">Night<br>market</div></div></div>
+            <div class="row" style="margin-top:6px;justify-content:space-between"><span class="pill live">Published</span><span class="dim mono" style="font-size:10.5px">FB IG</span></div>
+            <div class="dim" style="font-size:11.5px">1,204 reach · 96 likes</div>
+          </div>
+          <div>
+            <div class="poster" style="container-type:inline-size"><div class="lay p-beach"></div><div class="lay p-sun" style="position:absolute;right:12%;top:12%"></div><div class="p-wave"></div><div class="p-wave b"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">Sarasota · Aug 9</div><div class="hl">Shore<br>thing</div></div></div>
+            <div class="row" style="margin-top:6px;justify-content:space-between"><span class="pill live">Published</span><span class="dim mono" style="font-size:10.5px">FB IG GBP</span></div>
+            <div class="dim" style="font-size:11.5px">1,871 reach · 143 likes</div>
+          </div>
+          <div>
+            <div class="poster" style="container-type:inline-size"><div class="lay p-dusk"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">Tampa · Aug 2</div><div class="hl">Storm<br>season</div></div></div>
+            <div class="row" style="margin-top:6px;justify-content:space-between"><span class="pill fail">Publish failed</span><span class="dim mono" style="font-size:10.5px">IG</span></div>
+            <div class="dim" style="font-size:11.5px">Image aspect rejected · retried ok</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="chead"><h3>30-day performance</h3><span class="spacer"></span><span class="dim mono" style="font-size:11.5px">synced 21 Aug 06:10</span></div>
+          <div class="pad">
+            <div class="mcards">
+              <div class="mcard"><div class="eyebrow">Reach</div><div class="v">6,842</div><div class="d dim" style="font-size:11.5px"><span style="color:var(--ok);font-weight:600">+11%</span> vs prior</div>
+                <svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,26 14,22 28,24 42,16 56,18 70,10 84,12 100,6" fill="none" stroke="var(--accent)" stroke-width="1.6"/><polyline points="0,34 0,26 14,22 28,24 42,16 56,18 70,10 84,12 100,6 100,34" fill="var(--accent-soft)" stroke="none"/><circle cx="100" cy="6" r="2" fill="var(--accent)"/></svg></div>
+              <div class="mcard"><div class="eyebrow">Engagements</div><div class="v">3,918</div><div class="d dim" style="font-size:11.5px">likes, comments, saves</div>
+                <svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,28 14,20 28,26 42,22 56,14 70,16 84,9 100,11" fill="none" stroke="var(--violet)" stroke-width="1.6"/><circle cx="100" cy="11" r="2" fill="var(--violet)"/></svg></div>
+              <div class="mcard"><div class="eyebrow">Posts live</div><div class="v">4</div><div class="d dim" style="font-size:11.5px">3 channels each</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chead"><h3>Publish history</h3><span class="spacer"></span><button class="btn sm ghost" onclick="go('analytics')">Analytics</button></div>
+          <div class="tscroll"><table>
+            <thead><tr><th>Post</th><th>Channels</th><th>Published</th><th class="n">Reach</th></tr></thead>
+            <tbody>
+              <tr><td>Night market</td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span></td><td class="mono dim">16 Aug 10:00</td><td class="n">1,204</td></tr>
+              <tr><td>Shore thing</td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span> <span class="pill live plain">GBP</span></td><td class="mono dim">09 Aug 10:00</td><td class="n">1,871</td></tr>
+              <tr><td>Storm season</td><td><span class="pill live plain">FB</span> <span class="pill live plain">IG</span></td><td class="mono dim">02 Aug 10:00</td><td class="n">1,533</td></tr>
+              <tr><td>Farmers market</td><td><span class="pill live plain">FB</span> <span class="pill live plain">GBP</span></td><td class="mono dim">26 Jul 10:00</td><td class="n">2,234</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ COLLATERAL QUEUE ═════════════════════════════════ -->
+<section class="screen" id="s-drafts">
+  <div class="phead">
+    <div><div class="eyebrow">Content library · M6</div><h1>Collateral</h1>
+      <div class="sub">Nothing publishes without a person. Editing an approved draft sends it back to Draft.</div></div>
+    <div class="acts"><div class="seg"><button class="sel">Awaiting review (5)</button><button>Approved (1)</button><button>Published</button><button>Archived</button></div></div>
+  </div>
+  <div class="card">
+    <div class="tscroll"><table>
+      <thead><tr><th>Draft</th><th>Campaign</th><th>Angle used</th><th>Signals</th><th>State</th><th class="n">Iterations</th><th>Waiting</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="lk" onclick="go('draft')">Beat the heat</span></td><td>Gulf Coast road readiness</td><td>Heat advisory + Gasparilla festival</td><td><span class="tag">3 of 3</span></td><td><span class="pill draft">Draft</span></td><td class="n">3 / 10</td><td class="mono dim">4h</td><td><button class="btn sm pri" onclick="go('draft')">Review</button></td></tr>
+        <tr><td><span class="lk" onclick="go('draft')">Desert cool-down</span></td><td>Phoenix heat watch</td><td>112&deg;F streak + Suns preseason</td><td><span class="tag">3 of 3</span></td><td><span class="pill draft">Draft</span></td><td class="n">0 / 10</td><td class="mono dim">1d 2h</td><td><button class="btn sm" onclick="go('draft')">Review</button></td></tr>
+        <tr><td><span class="lk" onclick="go('draft')">Zilker weekend</span></td><td>Texas road trip season</td><td>Zilker Kite Fest 3.1 mi</td><td><span class="tag">3 of 3</span></td><td><span class="pill draft">Draft</span></td><td class="n">2 / 10</td><td class="mono dim">1d 4h</td><td><button class="btn sm" onclick="go('draft')">Review</button></td></tr>
+        <tr><td><span class="lk" onclick="go('draft')">Mountain mornings</span></td><td>Mountain winter prep</td><td>Cool front, seasonal fallback</td><td><span class="tag" style="border-color:var(--warn);color:var(--warn)">2 of 3 · news</span></td><td><span class="pill draft">Draft</span></td><td class="n">0 / 10</td><td class="mono dim">1d 5h</td><td><button class="btn sm" onclick="go('draft')">Review</button></td></tr>
+        <tr><td><span class="lk" onclick="go('draft')">Gulch game night</span></td><td>Nashville game days</td><td>Titans home opener 1.8 mi</td><td><span class="tag">3 of 3</span></td><td><span class="pill appr">Approved</span></td><td class="n">1 / 10</td><td class="mono dim">–</td><td><button class="btn sm pri" onclick="openPublish()">Publish</button></td></tr>
+        <tr><td><span class="lk" onclick="go('draft')">Glenwood block party</span></td><td>Carolina neighborhood nights</td><td>Street festival Sat 0.6 mi</td><td><span class="tag">3 of 3</span></td><td><span class="pill draft">Draft</span></td><td class="n">4 / 10</td><td class="mono dim">2d 4h</td><td><button class="btn sm" onclick="go('draft')">Review</button></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ══ DRAFT STUDIO ═════════════════════════════════════ -->
+<section class="screen" id="s-draft">
+  <div class="phead">
+    <div>
+      <div class="eyebrow"><span class="lk" onclick="go('franchise')" style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em">GULF COAST ROAD READINESS</span> · 3 locations · cycle 20 Aug · snapshot v14</div>
+      <h1>Beat the heat</h1>
+      <div class="sub">Generated from a heat advisory and a festival 1.9 mi away. Grounded: the caption can only cite what the snapshot contains.</div>
+    </div>
+    <div class="acts">
+      <button class="btn ghost" onclick="go('drafts')">Back to queue</button>
+      <button class="btn" id="btnApprove" onclick="approve()">Approve</button>
+      <button class="btn pri" id="btnPublish" onclick="openPublish()" disabled>Publish…</button>
+    </div>
+  </div>
+
+  <div id="draftFlag" class="banner warn" style="margin-bottom:14px;display:none">
+    <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 17.4A2 2 0 004.2 20.4h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    <div><b>Edited after approval</b>: this draft went back to Draft and needs re-approving before it can publish.</div>
+  </div>
+
+  <div class="seg" style="display:inline-flex;margin-bottom:14px">
+    <button class="sel" id="dtabC" onclick="dtab('content')">Content</button>
+    <button id="dtabM" onclick="dtab('map')">Targeting map</button>
+  </div>
+
+  <div id="paneMap" style="display:none">
+    <div class="card">
+      <div class="chead"><h3>Hyperlocal targeting · Gulf Coast road readiness</h3><span class="spacer"></span><span class="dim" style="font-size:12px">Radii to relative scale · illustrative geometry</span></div>
+      <div class="pad" style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start">
+        <div style="border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden">
+          <svg viewBox="0 0 560 420" style="display:block;width:100%;background:#DCE9EC">
+            <path d="M300 0 L560 0 L560 420 L360 420 C330 380 318 330 322 288 C326 246 306 214 296 178 C286 142 296 96 288 60 C283 32 292 12 300 0 Z" fill="#EDF0EA" stroke="#C9D4CE" stroke-width="1.5"/>
+            <path d="M300 0 C292 12 283 32 288 60 C296 96 286 142 296 178 C306 214 326 246 322 288 C318 330 330 380 360 420" fill="none" stroke="#9FB8BE" stroke-width="2"/>
+            <g font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#41514F">
+              <circle cx="352" cy="120" r="72" fill="rgba(11,107,103,.10)" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="352" cy="120" r="5" fill="var(--accent)"/>
+              <text x="366" y="112" font-weight="700" font-size="11.5" font-family="inherit">Tampa · Hyde Park</text>
+              <text x="366" y="126">33606 · 50 mi</text>
+              <circle cx="318" cy="222" r="40" fill="rgba(70,74,142,.10)" stroke="var(--violet)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="318" cy="222" r="4.5" fill="var(--violet)"/>
+              <text x="332" y="216" font-weight="700" font-size="11.5">St. Pete · Central Ave</text>
+              <text x="332" y="230">33701 · 25 mi</text>
+              <circle cx="336" cy="330" r="40" fill="rgba(181,77,40,.10)" stroke="var(--advisory)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="336" cy="330" r="4.5" fill="var(--advisory)"/>
+              <text x="350" y="324" font-weight="700" font-size="11.5">Sarasota · Downtown</text>
+              <text x="350" y="338">34236 · 25 mi</text>
+              <text x="70" y="200" fill="#7B98A0" font-size="11" letter-spacing="2">GULF OF MEXICO</text>
+              <path d="M340 168 L330 184" stroke="#41514F" stroke-width="1" stroke-dasharray="2 2"/>
+              <text x="252" y="180" font-size="9.5" fill="#6C7D7B">radii overlap: events deduped</text>
+            </g>
+          </svg>
+        </div>
+        <div class="stack">
+          <div class="tscroll"><table>
+            <thead><tr><th>Location</th><th>ZIPs</th><th>Radius</th><th class="n">Signals</th></tr></thead>
+            <tbody>
+              <tr><td><b>Tampa · Hyde Park</b></td><td class="mono dim">33606 · 33629</td><td class="mono">50 mi</td><td class="n">3 / 3</td></tr>
+              <tr><td><b>St. Pete · Central Ave</b></td><td class="mono dim">33701</td><td class="mono">25 mi</td><td class="n">3 / 3</td></tr>
+              <tr><td><b>Sarasota · Downtown</b></td><td class="mono dim">34236</td><td class="mono">25 mi</td><td class="n">3 / 3</td></tr>
+            </tbody>
+          </table></div>
+          <div class="hint">The caption above is generated once per campaign cycle; location-specific facts (distances, venues) resolve per location at publish time. Publishing fans out to every mapped channel in every location.</div>
+          <button class="btn sm" onclick="openLocations()" style="align-self:flex-start"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 21s7-6.1 7-11a7 7 0 10-14 0c0 4.9 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>&nbsp;Manage locations</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="paneContent">
+  <div class="studio">
+    <!-- left: image -->
+    <div class="stack">
+      <div class="card">
+        <div class="chead">
+          <h3>Marketing image</h3>
+          <span class="pill plain" style="background:var(--surface-2);color:var(--ink-3)" id="verBadge">v3 active</span>
+          <span class="spacer"></span>
+          <div class="seg" id="sizeSeg"><button class="sel" onclick="setSize(this,'sq')">1080 × 1080</button><button onclick="setSize(this,'pt')">1080 × 1350</button></div>
+          <button class="btn sm" id="cmpBtn" onclick="toggleCompare()"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l-3 4 3 4M19 8l3 4-3 4"/></svg>Compare</button>
+        </div>
+        <div class="canvas" id="canvas"></div>
+        <div class="film" id="film"></div>
+        <div class="statebar">
+          <span id="statePill" class="pill draft">Draft</span>
+          <span class="dim" style="font-size:12px">Image iterations <b class="mono" id="iterN">3</b> of 10 · resets never, cap is deploy-time configuration</span>
+          <span class="spacer"></span>
+          <button class="btn sm ghost" onclick="revert()">Revert to v2</button>
+          <button class="btn sm ghost" onclick="toast('ok','Manual upload','Escape hatch: replace the generated image with your own file.')"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 7l5-5 5 5M4 21h16"/></svg>Upload replacement</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chead"><h3>Why this content</h3><span class="spacer"></span><span class="dim" style="font-size:12px">Angle → source mapping, retained for audit</span><button class="btn sm" onclick="toggleCtx()">+ Add context</button></div>
+        <div class="pad">
+          <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <span class="eyebrow" style="align-self:center">Common topics this cycle</span>
+            <span class="pill sig plain">Heat advisory</span>
+            <span class="pill sig plain">Festival traffic</span>
+            <span class="pill sig plain">Weekend road trips</span>
+            <span class="pill sig plain">Community markets</span>
+          </div>
+          <div class="why"><span class="n2">1</span><div><div class="a">Heat index hits 99&deg;F Saturday and Sunday</div>
+            <div class="src">Weather · <code>NWS api.weather.gov</code> · gridpoint TBW/56,71 · fetched 20 Aug 09:04 · heat advisory active</div></div></div>
+          <div class="why"><span class="n2">2</span><div><div class="a">Gasparilla Music Festival, 1.9 mi, Saturday</div>
+            <div class="src">Events · <code>Ticketmaster Discovery</code> · event K8vZ917u · Curtis Hixon Park · distance by haversine</div></div></div>
+          <div class="why"><span class="n2">3</span><div><div class="a">Hyde Park Village extended Sunday market hours</div>
+            <div class="src">News · <code>GNews</code> · Creative Loafing, 18 Aug · passed brand-safety category check</div></div></div>
+          <div class="hint">7 news items were withheld before this step (crime / tragedy / politics). No offer, price or date appears in the copy that is not in the snapshot.</div>
+          <div id="ctxRow" style="display:none;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px">
+            <div class="row" style="gap:8px;align-items:flex-end">
+              <label class="f" style="flex:1"><span>Your context: included as a labelled source in the next generation</span><input id="ctxInput" placeholder="e.g. we are running a Saturday alignment clinic; mention the Howard Ave entrance is open during construction"></label>
+              <button class="btn pri" onclick="addCtx()">Add &amp; regenerate</button>
+            </div>
+            <div class="hint">Custom context is stored on the campaign, shown in the audit trail, and never overrides the brand-safety filter.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: refine + copy -->
+    <div class="stack">
+      <div class="card">
+        <div class="chead"><h3>Refine</h3><span class="spacer"></span><span class="dim mono" style="font-size:11.5px" id="capLeft">7 left</span></div>
+        <div class="chat" id="chat">
+          <div class="msg s">Generated <b>v1</b> from snapshot v14. Angle: heat advisory Sat–Sun, festival 1.9 mi. Image model <b>gpt-image-1</b>, 14.2 s, $0.09.</div>
+          <div class="msg u">Try an open highway at golden hour instead of the storefront gradient: keep it bright.</div>
+          <div class="msg s">Created <b>v2</b> from v1 as reference. 18.6 s, $0.09.</div>
+          <div class="msg u">Add our logo bottom-right.</div>
+          <div class="msg s">Created <b>v3</b> and set it active. Brand logo placed from brand configuration at 6% inset. 16.1 s, $0.09.</div>
+        </div>
+        <div class="composer">
+          <div class="row" style="align-items:flex-end;gap:8px">
+            <label class="f" style="flex:1"><span>Describe the change</span><textarea id="prompt" rows="2" placeholder="e.g. make the sky warmer and move the logo to the top-left"></textarea></label>
+            <button class="btn pri" onclick="genImage()" id="genBtn">Generate</button>
+          </div>
+          <div class="hint">Runs async: you can leave this page and you&rsquo;ll be notified when the version lands.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chead"><h3>Copy</h3><span class="spacer"></span><button class="btn sm ghost" onclick="regenCopy()">Regenerate with a prompt</button></div>
+        <div class="tabs">
+          <button class="sel" onclick="tab(this,'t1')">Primary caption</button>
+          <button onclick="tab(this,'t2')">Short · GBP</button>
+          <button onclick="tab(this,'t3')">Email / SMS</button>
+        </div>
+        <div class="tabp on" id="t1">
+          <textarea id="capMain" rows="8" oninput="dirty()">Tampa, it is going to be a 99° kind of weekend. 🥵
+
+Hot pavement is hard on tires: pressure spikes and worn tread lets go first in this heat. Driving in for Gasparilla at Curtis Hixon Park on Saturday? We are two blocks off the Riverwalk: swing by for a quick pressure and tread check before the drive home, or have a fresh set fitted while you wait.
+
+Oil changes and rotations all weekend, no appointment needed. 🛞
+
+#Tampa #HydePark #Gasparilla #TireSafety #NewTires #RoadReady</textarea>
+          <div class="cchk"><span>Facebook &amp; Instagram · <b class="mono">479 / 2,200</b></span><span>6 hashtags · in brand voice</span></div>
+        </div>
+        <div class="tabp" id="t2">
+          <textarea rows="6" oninput="dirty()">Heat index near 99° in Tampa this weekend: hot pavement is hard on worn tires. Two blocks off the Riverwalk and a short drive from Gasparilla Music Festival: pressure and tread checks, oil changes, rotations, and new sets fitted while you wait.</textarea>
+          <div class="cchk"><span>Google Business Profile · <b class="mono">245 / 1,500</b></span><span>Hashtags stripped automatically</span></div>
+        </div>
+        <div class="tabp" id="t3">
+          <textarea rows="6" oninput="dirty()">Tampa: 99° weekend. Hot roads punish worn tires. 2 blocks off the Riverwalk: tire checks, oil changes, rotations, new sets fitted Sat &amp; Sun.</textarea>
+          <div class="cchk"><span>Plain text · <b class="mono">141 / 160</b> SMS-safe</span><span>Copy out or export to CSV · LocalPulse does not send</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ══ ANALYTICS ════════════════════════════════════════ -->
+<section class="screen" id="s-analytics">
+  <div class="phead">
+    <div><div class="eyebrow">Engagement metrics only: attribution and ROI are v2</div><h1>Analytics</h1>
+      <div class="sub">Pulled every 6–12 h for the first week after publish, then daily to day 30.</div></div>
+    <div class="acts">
+      <div class="seg"><button onclick="seg(this)">7d</button><button class="sel" onclick="seg(this)">30d</button><button onclick="seg(this)">90d</button></div>
+      <button class="btn" onclick="toast('ok','Metrics refresh queued','Rate-limit aware · Meta allows one insights pull per post per hour.')"><svg viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 9A8 8 0 006 5.3M4 15a8 8 0 0014 3.7"/></svg>Refresh</button>
+      <button class="btn" onclick="toast('ok','Export ready','analytics-30d-2026-08-21.csv')"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>CSV</button>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="row wrap" style="justify-content:space-between">
+      <div class="mcards" style="flex:1">
+        <div class="mcard"><div class="eyebrow">Reach</div><div class="v">128.4K</div><div class="dim" style="font-size:11.5px"><span style="color:var(--ok);font-weight:600">+9.2%</span></div>
+          <svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,30 12,27 24,28 36,20 48,22 60,14 72,15 84,9 100,7" fill="none" stroke="var(--accent)" stroke-width="1.6"/><polyline points="0,34 0,30 12,27 24,28 36,20 48,22 60,14 72,15 84,9 100,7 100,34" fill="var(--accent-soft)"/><circle cx="100" cy="7" r="2" fill="var(--accent)"/></svg></div>
+        <div class="mcard"><div class="eyebrow">Engagements</div><div class="v">41.2K</div><div class="dim" style="font-size:11.5px"><span style="color:var(--ok);font-weight:600">+8.4%</span></div>
+          <svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><polyline points="0,29 12,24 24,26 36,18 48,20 60,16 72,12 84,13 100,8" fill="none" stroke="var(--violet)" stroke-width="1.6"/><circle cx="100" cy="8" r="2" fill="var(--violet)"/></svg></div>
+        <div class="mcard"><div class="eyebrow">Engagement rate</div><div class="v">3.21%</div><div class="dim" style="font-size:11.5px">engagements ÷ reach</div></div>
+        <div class="mcard"><div class="eyebrow">Posts live</div><div class="v">172</div><div class="dim" style="font-size:11.5px">across 44 locations</div></div>
+        <div class="mcard"><div class="eyebrow">GBP CTA clicks</div><div class="v">1,904</div><div class="dim" style="font-size:11.5px">directions + calls</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>Channel comparison</h3><span class="spacer"></span><span class="dim mono" style="font-size:11.5px">last 30 days</span></div>
+      <div class="pad">
+        <div class="bars">
+          <div class="bar"><span>Instagram</span><span class="tr"><i style="width:88%;background:var(--accent)"></i></span><span class="mono" style="text-align:right">21.4K</span></div>
+          <div class="bar"><span>Facebook</span><span class="tr"><i style="width:61%;background:var(--violet)"></i></span><span class="mono" style="text-align:right">14.8K</span></div>
+          <div class="bar"><span>Google Business</span><span class="tr"><i style="width:21%;background:var(--advisory)"></i></span><span class="mono" style="text-align:right">5.0K</span></div>
+        </div>
+        <div class="leg" style="margin-top:14px"><span><i style="background:var(--accent)"></i>Engagements</span><span>IG saves are counted; GBP exposes views and CTA clicks only</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>Location leaderboard</h3><span class="spacer"></span><span class="dim mono" style="font-size:11.5px">last synced 21 Aug 06:10 ET</span></div>
+      <div class="tscroll"><table>
+        <thead><tr><th class="srt" onclick="sortT(this,0,'t')">Location</th><th class="n srt" onclick="sortT(this,1,'n')">Posts</th><th class="n srt" onclick="sortT(this,2,'n')">Reach</th><th class="n srt" onclick="sortT(this,3,'n')">Engagements</th><th class="n srt dn" onclick="sortT(this,4,'n')">Eng. rate</th></tr></thead>
+        <tbody>
+          <tr><td>Austin · South Congress</td><td class="n">4</td><td class="n">9,140</td><td class="n">4,470</td><td class="n">4.89%</td></tr>
+          <tr><td>Phoenix · Arcadia</td><td class="n">5</td><td class="n">11,802</td><td class="n">5,204</td><td class="n">4.41%</td></tr>
+          <tr><td>Tampa · Hyde Park</td><td class="n">4</td><td class="n">6,842</td><td class="n">3,918</td><td class="n">3.86%</td></tr>
+          <tr><td>Nashville · The Gulch</td><td class="n">4</td><td class="n">8,410</td><td class="n">3,140</td><td class="n">3.73%</td></tr>
+          <tr><td>Denver · Cherry Creek</td><td class="n">3</td><td class="n">7,905</td><td class="n">2,611</td><td class="n">3.30%</td></tr>
+          <tr><td>Raleigh · Glenwood</td><td class="n">3</td><td class="n">6,640</td><td class="n">2,088</td><td class="n">3.14%</td></tr>
+          <tr><td>Boise · Downtown</td><td class="n">2</td><td class="n">4,120</td><td class="n">1,204</td><td class="n">2.92%</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>Per-post detail</h3><span class="spacer"></span><span class="dim" style="font-size:12px">Stored as a time series, so trend is real: not just the latest number</span></div>
+      <div class="pad" style="display:flex;flex-direction:column;gap:14px">
+        <div class="row wrap" style="gap:14px;align-items:flex-start">
+          <div style="width:96px;container-type:inline-size"><div class="poster"><div class="lay p-fest"></div><div class="p-bokeh" style="width:34%;left:12%;top:18%"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="hl">Night<br>market</div></div></div></div>
+          <div style="flex:1;min-width:260px">
+            <div class="row" style="gap:8px"><b>Night market</b><span class="pill live">Published</span><span class="dim mono" style="font-size:11.5px">16 Aug 10:00 · Tampa</span></div>
+            <div class="mcards" style="margin-top:10px">
+              <div class="mcard"><div class="eyebrow">IG reach</div><div class="v" style="font-size:19px">1,204</div><svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><polyline points="0,24 20,14 40,9 60,6 80,5 100,4" fill="none" stroke="var(--accent)" stroke-width="1.6"/></svg></div>
+              <div class="mcard"><div class="eyebrow">Likes</div><div class="v" style="font-size:19px">96</div></div>
+              <div class="mcard"><div class="eyebrow">Saves</div><div class="v" style="font-size:19px">31</div></div>
+              <div class="mcard"><div class="eyebrow">Comments</div><div class="v" style="font-size:19px">12</div></div>
+              <div class="mcard"><div class="eyebrow">FB reach</div><div class="v" style="font-size:19px">742</div></div>
+            </div>
+            <div class="row wrap" style="margin-top:10px;gap:8px"><a href="#" onclick="return false">View on Instagram →</a><a href="#" onclick="return false">View on Facebook →</a><span class="dim mono" style="font-size:11.5px">post 17914_882 · 17841_402</span></div>
+          </div>
+        </div>
+        <div class="banner info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <div><b>Storm season · Facebook: removed on platform.</b> The metrics poll got a 404 on 12 Aug, so the post is marked removed and stopped collecting. Someone deleted it in Facebook directly; LocalPulse keeps the history.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CYCLE MONITOR ════════════════════════════════════ -->
+<section class="screen" id="s-jobs">
+  <div class="phead">
+    <div><div class="eyebrow">Scheduling &amp; job orchestration · M3</div><h1>Cycle monitor</h1>
+      <div class="sub">Last run: 47 locations enqueued with jitter across 42 minutes so no provider gets hammered.</div></div>
+    <div class="acts"><button class="btn" onclick="toast('ok','Queue drained','No stuck jobs. 0 in dead-letter.')">Inspect queue</button><button class="btn pri" onclick="runNow('all failed locations')">Re-run failed</button></div>
+  </div>
+  <div class="stack">
+    <div class="kpis">
+      <div class="kpi"><div class="eyebrow">Last run</div><div class="v">45<span style="font-size:16px;color:var(--ink-3)">/47</span></div><div class="d">2 paused, 0 in flight</div></div>
+      <div class="kpi"><div class="eyebrow">Failed cycles</div><div class="v" style="color:var(--crit)">1</div><div class="d">Boise: all sources down</div></div>
+      <div class="kpi"><div class="eyebrow">Partial cycles</div><div class="v" style="color:var(--warn)">3</div><div class="d">News unavailable</div></div>
+      <div class="kpi"><div class="eyebrow">Median cycle</div><div class="v">38s</div><div class="d">Ingest 6s · copy 9s · image 21s</div></div>
+      <div class="kpi"><div class="eyebrow">Provider quota</div><div class="v">62%</div><div class="d">Events API, month to date</div></div>
+    </div>
+    <div class="card">
+      <div class="chead"><h3>Run history</h3><span class="spacer"></span>
+        <div class="seg"><button class="sel">All</button><button>Failed</button><button>Partial</button><button>Manual runs</button></div></div>
+      <div class="tscroll"><table>
+        <thead><tr><th>Run</th><th>Location</th><th>Trigger</th><th>Sources</th><th>Outcome</th><th class="n">Duration</th><th class="n">Cost</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="mono dim">20 Aug 09:04</td><td>Tampa · Hyde Park</td><td><span class="tag">Schedule</span></td><td><span class="pill live plain">WX</span> <span class="pill live plain">EV</span> <span class="pill live plain">NW</span></td><td><span class="pill live">Draft created</span></td><td class="n">34s</td><td class="n">$0.41</td><td><button class="btn sm ghost">Log</button></td></tr>
+          <tr><td class="mono dim">20 Aug 08:47</td><td>Denver · Cherry Creek</td><td><span class="tag">Schedule</span></td><td><span class="pill live plain">WX</span> <span class="pill live plain">EV</span> <span class="pill fail plain">NW</span></td><td><span class="pill warn">Partial · generated</span><div class="dim" style="font-size:11px">News: 0 results in radius after 3 tries</div></td><td class="n">51s</td><td class="n">$0.39</td><td><button class="btn sm ghost">Log</button></td></tr>
+          <tr><td class="mono dim">20 Aug 08:05</td><td>Boise · Downtown</td><td><span class="tag">Schedule</span></td><td><span class="pill fail plain">WX</span> <span class="pill fail plain">EV</span> <span class="pill fail plain">NW</span></td><td><span class="pill fail">Failed · nothing generated</span><div class="dim" style="font-size:11px">Upstream DNS failure, backoff 1s/4s/16s exhausted</div></td><td class="n">22s</td><td class="n">$0.00</td><td><button class="btn sm" onclick="runNow('Boise · Downtown')">Run now</button></td></tr>
+          <tr><td class="mono dim">20 Aug 08:12</td><td>Phoenix · Arcadia</td><td><span class="tag">Schedule</span></td><td><span class="pill live plain">WX</span> <span class="pill live plain">EV</span> <span class="pill live plain">NW</span></td><td><span class="pill live">Draft created</span></td><td class="n">41s</td><td class="n">$0.43</td><td><button class="btn sm ghost">Log</button></td></tr>
+          <tr><td class="mono dim">19 Aug 16:22</td><td>Austin · South Congress</td><td><span class="tag">Manual · Dana W.</span></td><td><span class="pill live plain">WX</span> <span class="pill live plain">EV</span> <span class="pill live plain">NW</span></td><td><span class="pill live">Draft created</span><div class="dim" style="font-size:11px">Idempotency key matched: no duplicate draft</div></td><td class="n">36s</td><td class="n">$0.40</td><td><button class="btn sm ghost">Log</button></td></tr>
+        </tbody>
+      </table></div>
+      <div class="srcbar"><span class="s"><i></i>WX weather</span><span class="s"><i></i>EV events</span><span class="s"><i></i>NW news</span><span class="spacer"></span><span>Alerts on failure go to all Admins by email plus the notification centre.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CONNECTIONS ══════════════════════════════════════ -->
+<section class="screen" id="s-connections">
+  <div class="phead">
+    <div><div class="eyebrow">Publishing integrations · M8</div><h1>Connections</h1>
+      <div class="sub">Tokens are encrypted at rest and never reach the browser. Expiry is the single most common way apps like this break, so it is surfaced early and loudly.</div></div>
+  </div>
+  <div class="stack">
+    <div class="banner warn"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 17.4A2 2 0 004.2 20.4h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+      <div style="flex:1"><b>Google Business Profile token expires 25 Aug</b> · 14 mapped locations. Publishing runs a token health check first, so you get this instead of a cryptic API error at publish time.
+        <div class="row" style="margin-top:8px"><button class="btn sm pri" onclick="toast('ok','Reconnect started','Google OAuth consent screen would open here.')">Reconnect Google</button></div></div></div>
+    <div class="three">
+      <div class="card"><div class="chead"><span class="glyph g-fb">f</span><h3>Facebook Pages</h3><span class="spacer"></span><span class="pill live">Healthy</span></div>
+        <div class="pad kv"><span class="k">Business</span><span>Sunspot Tire Company</span><span class="k">Pages</span><span>47 discovered · 47 mapped</span><span class="k">Scopes</span><span class="mono" style="font-size:11.5px">pages_manage_posts, pages_read_engagement</span><span class="k">Token</span><span>Long-lived · refreshes 14 Nov</span></div>
+        <div class="srcbar"><button class="btn sm ghost">Re-sync pages</button><span class="spacer"></span><button class="btn sm ghost" style="color:var(--crit)">Disconnect</button></div></div>
+      <div class="card"><div class="chead"><span class="glyph g-ig">◎</span><h3>Instagram Business</h3><span class="spacer"></span><span class="pill live">Healthy</span></div>
+        <div class="pad kv"><span class="k">Linked via</span><span>Meta Business, same login</span><span class="k">Accounts</span><span>45 mapped · 2 not linked to a Page</span><span class="k">Scopes</span><span class="mono" style="font-size:11.5px">instagram_basic, instagram_content_publish</span><span class="k">Token</span><span>Long-lived · refreshes 14 Nov</span></div>
+        <div class="srcbar"><span class="s part"><i></i>Boise and Portland need an IG account linked to their Page</span></div></div>
+      <div class="card"><div class="chead"><span class="glyph g-gbp">G</span><h3>Google Business Profile</h3><span class="spacer"></span><span class="pill warn">Expiring</span></div>
+        <div class="pad kv"><span class="k">Account</span><span>Sunspot Tire Company</span><span class="k">Locations</span><span>47 discovered · 44 mapped</span><span class="k">Scopes</span><span class="mono" style="font-size:11.5px">business.manage</span><span class="k">Token</span><span style="color:var(--warn);font-weight:600">Expires 25 Aug 2026</span></div>
+        <div class="srcbar"><button class="btn sm pri">Reconnect</button><span class="spacer"></span><span class="dim">API access approved 12 Jun</span></div></div>
+    </div>
+    <div class="card">
+      <div class="chead"><h3>Location → channel mapping</h3><span class="spacer"></span><div class="search" style="width:200px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg><input placeholder="Filter locations…"></div></div>
+      <div class="tscroll"><table>
+        <thead><tr><th>Location</th><th>Facebook Page</th><th>Instagram account</th><th>GBP location</th><th>Health</th></tr></thead>
+        <tbody>
+          <tr><td>Tampa · Hyde Park</td><td>Sunspot Tampa Hyde Park<div class="dim mono" style="font-size:11px">1044‑­8821</div></td><td>@sunspot.tampa<div class="dim mono" style="font-size:11px">1789‑­4402</div></td><td>Hyde Park Village<div class="dim mono" style="font-size:11px">loc/1122‑­9</div></td><td><span class="pill live">All three</span></td></tr>
+          <tr><td>Austin · South Congress</td><td>Sunspot Austin SoCo</td><td>@sunspot.austin</td><td><span class="dim">Not mapped</span></td><td><span class="pill warn">FB + IG only</span></td></tr>
+          <tr><td>Boise · Downtown</td><td>Sunspot Boise</td><td><span class="dim">No linked IG account</span></td><td>Boise 8th St</td><td><span class="pill warn">FB + GBP only</span></td></tr>
+          <tr><td>Portland · Hawthorne</td><td>Sunspot Portland</td><td><span class="dim">No linked IG account</span></td><td>Hawthorne Blvd</td><td><span class="pill draft">Paused location</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="srcbar"><span>A location can have a subset connected: publish targets only what is mapped, and says so in the confirm step.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SETTINGS ═════════════════════════════════════════ -->
+<section class="screen" id="s-settings">
+  <div class="phead">
+    <div><div class="eyebrow">Cycle defaults · M3 / M11</div><h1>Settings</h1>
+      <div class="sub">Radius and cadence are the two values that decide what gets fetched and when. Every location inherits these unless it overrides them.</div></div>
+    <div class="acts"><button class="btn ghost">Discard</button><button class="btn pri" onclick="toast('ok','Settings saved','Change recorded in the audit log.')">Save changes</button></div>
+  </div>
+  <div class="card" style="max-width:660px">
+    <div class="chead"><h3>Cycle defaults</h3><span class="spacer"></span><span class="dim" style="font-size:12px">Applies to 47 locations</span></div>
+    <div class="pad" style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+      <label class="f"><span>Default radius</span><select><option>50 mi</option><option>100 mi</option></select><div class="hint">Stored in miles as data, not hardcoded</div></label>
+      <label class="f"><span>Default frequency</span><select><option>Weekly</option><option>Bi-weekly</option><option>Monthly</option></select></label>
+      <label class="f"><span>Day of week</span><select><option>Thursday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Friday</option></select></label>
+      <label class="f"><span>Time (location-local)</span><input value="09:00"><div class="hint">Resolved through the tz database, so DST follows each location</div></label>
+      <div style="grid-column:1/-1" class="banner info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        <div>Brand kit, guardrails, banned words, spend caps, iteration cap and provider keys are deploy-time configuration in the MVP: changing any of them needs a release.</div></div>
+    </div>
+    <div class="srcbar"><span>3 locations override the default radius · 6 override the frequency</span><span class="spacer"></span><a href="#" onclick="go('franchises');return false">See overrides →</a></div>
+  </div>
+</section>
+
+<!-- ══ USERS ════════════════════════════════════════════ -->
+<section class="screen" id="s-users">
+  <div class="phead"><div><div class="eyebrow">Authentication &amp; RBAC · M1</div><h1>Users &amp; roles</h1>
+    <div class="sub">Users are deactivated, never deleted: the audit trail has to stay intact.</div></div>
+    <div class="acts"><button class="btn pri" onclick="toast('ok','Invite sent','They set their own password from the emailed link.')">Invite user</button></div></div>
+  <div class="two">
+    <div class="card"><div class="chead"><h3>Team</h3><span class="spacer"></span><span class="dim" style="font-size:12px">6 active · 1 deactivated</span></div>
+      <div class="tscroll"><table><thead><tr><th>Person</th><th>Role</th><th>Last active</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Dana Whitfield<div class="dim" style="font-size:11.5px">dana.whitfield@sunspottirecompany.com</div></td><td><span class="tag">Admin</span></td><td class="mono dim">now</td><td><span class="pill live">Active</span></td><td class="dim" style="font-size:12px">You</td></tr>
+          <tr><td>Priya Raman<div class="dim" style="font-size:11.5px">priya.raman@sunspottirecompany.com</div></td><td><span class="tag">Marketer</span></td><td class="mono dim">08:12 today</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost">Manage</button></td></tr>
+          <tr><td>Marcus Bell<div class="dim" style="font-size:11.5px">marcus.bell@sunspottirecompany.com</div></td><td><span class="tag">Marketer</span></td><td class="mono dim">yesterday</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost">Manage</button></td></tr>
+          <tr><td>Sofia Nunes<div class="dim" style="font-size:11.5px">sofia.nunes@sunspottirecompany.com</div></td><td><span class="tag">Admin</span></td><td class="mono dim">3 days ago</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost">Manage</button></td></tr>
+          <tr><td>Wes Tanaka<div class="dim" style="font-size:11.5px">wes.tanaka@sunspottirecompany.com</div></td><td><span class="tag">Marketer</span></td><td class="mono dim">pending invite</td><td><span class="pill warn">Invited</span></td><td><button class="btn sm ghost">Resend</button></td></tr>
+          <tr style="opacity:.6"><td>Alan Voss<div class="dim" style="font-size:11.5px">alan.voss@sunspottirecompany.com</div></td><td><span class="tag">Marketer</span></td><td class="mono dim">14 Jun</td><td><span class="pill draft">Deactivated</span></td><td><button class="btn sm ghost">Reactivate</button></td></tr>
+        </tbody></table></div></div>
+    <div class="card"><div class="chead"><h3>What each role can do</h3></div>
+      <div class="tscroll"><table><thead><tr><th>Capability</th><th>Admin</th><th>Marketer</th></tr></thead><tbody>
+        <tr><td>Review, edit, refine collateral</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Approve and publish</td><td>✓</td><td>✓</td></tr>
+        <tr><td>View analytics and export</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Create / edit / pause locations</td><td>✓</td><td class="dim">–</td></tr>
+        <tr><td>Connect or disconnect social accounts</td><td>✓</td><td class="dim">–</td></tr>
+        <tr><td>Change default radius and cadence</td><td>✓</td><td class="dim">–</td></tr>
+        <tr><td>Trigger a manual cycle</td><td>✓</td><td class="dim">–</td></tr>
+        <tr><td>Invite or deactivate users</td><td>✓</td><td class="dim">–</td></tr>
+        <tr><td>View audit log</td><td>✓</td><td class="dim">–</td></tr>
+      </tbody></table></div>
+      <div class="srcbar"><span>Enforced at the route and the API, not just hidden in the UI.</span></div></div>
+  </div>
+</section>
+
+<!-- ══ AUDIT ════════════════════════════════════════════ -->
+<section class="screen" id="s-audit">
+  <div class="phead"><div><div class="eyebrow">Sensitive-action trail · M1</div><h1>Audit log</h1>
+    <div class="sub">Publishing to live accounts and spending generation credits both need to be answerable for.</div></div>
+    <div class="acts"><button class="btn"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>Export</button></div></div>
+  <div class="card">
+    <div class="pad row wrap" style="gap:10px">
+      <div class="search" style="flex:1;min-width:200px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg><input placeholder="Search actions…"></div>
+      <select style="width:auto"><option>All users</option><option>Dana Whitfield</option><option>Priya Raman</option><option>System</option></select>
+      <select style="width:auto"><option>All actions</option><option>Publish</option><option>Approve</option><option>Settings change</option><option>Connection change</option></select>
+      <input value="14 Aug – 21 Aug" style="width:auto">
+    </div>
+    <div class="tscroll"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody>
+      <tr><td class="mono dim">21 Aug 08:12</td><td>Priya Raman</td><td><span class="tag">Draft edited</span></td><td>Tampa · Beat the heat</td><td class="dim">Caption edited after approval → state returned to Draft</td></tr>
+      <tr><td class="mono dim">21 Aug 08:04</td><td>Priya Raman</td><td><span class="tag">Image generated</span></td><td>Tampa · Beat the heat v3</td><td class="dim">Prompt "add our logo bottom-right" · $0.09</td></tr>
+      <tr><td class="mono dim">20 Aug 17:41</td><td>Marcus Bell</td><td><span class="tag">Published</span></td><td>Nashville · Gulch game night</td><td class="dim">FB ok, IG ok, GBP skipped (not mapped)</td></tr>
+      <tr><td class="mono dim">20 Aug 12:03</td><td>Dana Whitfield</td><td><span class="tag">Settings changed</span></td><td>Global · default radius</td><td class="dim">50 mi → 100 mi</td></tr>
+      <tr><td class="mono dim">20 Aug 09:04</td><td>System</td><td><span class="tag">Cycle completed</span></td><td>Tampa · Hyde Park</td><td class="dim">Snapshot v14, draft created, $0.41</td></tr>
+      <tr><td class="mono dim">19 Aug 16:22</td><td>Dana Whitfield</td><td><span class="tag">Manual cycle</span></td><td>Austin · South Congress</td><td class="dim">Run now · idempotency key reused, no duplicate</td></tr>
+      <tr><td class="mono dim">18 Aug 11:50</td><td>Dana Whitfield</td><td><span class="tag">Connection</span></td><td>Google Business Profile</td><td class="dim">OAuth re-consent, 44 locations re-mapped</td></tr>
+    </tbody></table></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- ══ PUBLISH SHEET ════════════════════════════════════ -->
+<div class="scrim" id="locScrim">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Manage locations" style="max-width:820px">
+    <div class="shead"><h3 style="font-size:15.5px">Locations</h3><span class="spacer"></span><span class="dim" style="font-size:12px">47 total · a location can carry one ZIP or many: radius applies per ZIP group</span><button class="iconbtn" onclick="closeLocations()" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div style="padding:14px 16px 4px">
+      <div class="tscroll"><table>
+        <thead><tr><th>Location</th><th>ZIP codes</th><th>Radius</th><th>In campaigns</th><th>Status</th><th></th></tr></thead>
+        <tbody id="locMgmtBody">
+          <tr><td><b>Tampa · Hyde Park</b><div class="dim" style="font-size:11.5px">742 S Howard Ave, Tampa FL</div></td><td class="mono dim">33606 · 33629</td><td class="mono">50 mi</td><td>Gulf Coast road readiness</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+          <tr><td><b>St. Pete · Central Ave</b><div class="dim" style="font-size:11.5px">460 Central Ave, St. Petersburg FL</div></td><td class="mono dim">33701</td><td class="mono">25 mi</td><td>Gulf Coast road readiness</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+          <tr><td><b>Sarasota · Downtown</b><div class="dim" style="font-size:11.5px">1441 Main St, Sarasota FL</div></td><td class="mono dim">34236</td><td class="mono">25 mi</td><td>Gulf Coast road readiness</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+          <tr><td><b>Phoenix · Arcadia</b><div class="dim" style="font-size:11.5px">4025 E Indian School Rd, Phoenix AZ</div></td><td class="mono dim">85018</td><td class="mono">100 mi</td><td>Phoenix heat watch</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+          <tr><td><b>Austin · South Congress</b><div class="dim" style="font-size:11.5px">1601 S Congress Ave, Austin TX</div></td><td class="mono dim">78704 · 78745 · 78702</td><td class="mono">50 mi</td><td>Texas road trip season</td><td><span class="pill live">Active</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+          <tr><td><b>Portland · Hawthorne</b><div class="dim" style="font-size:11.5px">3435 SE Hawthorne Blvd, Portland OR</div></td><td class="mono dim">97214</td><td class="mono">50 mi</td><td>Pacific Northwest tune-up</td><td><span class="pill draft">Paused</span></td><td><button class="btn sm ghost" onclick="toast('ok','Edit location','ZIPs are validated and geocoded on save; radius is data, not code.')">Edit</button></td></tr>
+        </tbody>
+      </table></div>
+      <div class="dim" style="font-size:12px;padding:8px 2px 10px">41 more locations · search and paging in the full build</div>
+    </div>
+    <div class="sfoot" style="gap:8px;flex-wrap:wrap">
+      <input id="newLocName" placeholder="Location name" style="flex:1;min-width:150px">
+      <input id="newLocZips" placeholder="ZIPs: one or many, comma-separated" style="flex:1.2;min-width:200px" class="mono">
+      <select id="newLocRad" style="width:auto"><option>25 mi</option><option selected>50 mi</option><option>100 mi</option></select>
+      <button class="btn pri" onclick="addLocation()">Add location</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Publish collateral">
+    <div class="shead">
+      <div><h3 style="font-size:15px">Publish · Beat the heat</h3><div class="dim" style="font-size:12px">Tampa · Hyde Park · approved by Priya Raman, 21 Aug 08:20 ET</div></div>
+      <span class="spacer"></span><button class="iconbtn" onclick="closePublish()" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <!-- setup -->
+    <div id="pubSetup">
+      <div class="sbody">
+        <div class="sleft">
+          <div class="eyebrow" style="margin-bottom:9px">Channels</div>
+          <label class="chan sel" onclick="pickChan(this,'fb')"><input type="checkbox" checked><span class="glyph g-fb">f</span><span><span class="nm">Facebook Page</span><span class="sub2">Sunspot Tampa Hyde Park</span></span></label>
+          <label class="chan sel" onclick="pickChan(this,'ig')"><input type="checkbox" checked><span class="glyph g-ig">◎</span><span><span class="nm">Instagram Business</span><span class="sub2">@sunspot.tampa</span></span></label>
+          <label class="chan sel" onclick="pickChan(this,'gbp')"><input type="checkbox" checked><span class="glyph g-gbp">G</span><span><span class="nm">Google Business Profile</span><span class="sub2">Hyde Park Village · token ok until 25 Aug</span></span></label>
+
+          <div class="banner info" style="margin-top:14px;font-size:12.5px"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><div>Token health checked just now: all three connections responded.</div></div>
+        </div>
+        <div class="sright">
+          <div class="row" style="justify-content:space-between;margin-bottom:10px">
+            <div class="eyebrow">Preview</div>
+            <div class="seg"><button class="sel" onclick="pv(this,'p-fb')">Facebook</button><button onclick="pv(this,'p-ig')">Instagram</button><button onclick="pv(this,'p-gbp')">Google</button></div>
+          </div>
+
+          <div id="p-fb" class="pvpane">
+            <div class="pv">
+              <div class="pvh"><span class="glyph g-fb">f</span><div><div class="nm">Sunspot Tampa Hyde Park</div><div class="tm">Just now · Tampa, FL · 🌎</div></div></div>
+              <div class="pvb">Tampa, it is going to be a 99° kind of weekend. 🥵<br><br>Hot pavement is hard on tires: pressure spikes and worn tread lets go first in this… <span class="dim">See more</span></div>
+              <div style="container-type:inline-size"><div class="poster" style="border-radius:0"><div class="lay p-road"></div><div class="p-sun" style="width:26%;right:14%;top:14%"></div><div class="p-lane"></div><div class="p-shoulder l"></div><div class="p-shoulder r"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">Tampa · this weekend</div><div class="hl">Road<br>ready</div></div><div class="p-logo"><i></i>Sunspot</div></div></div>
+              <div class="pvf"><span>👍 Like</span><span>💬 Comment</span><span>↗ Share</span></div>
+            </div>
+            <div class="hint">Facebook collapses the caption after ~125 characters. The angle lands in the first line, which is deliberate.</div>
+          </div>
+
+          <div id="p-ig" class="pvpane" style="display:none">
+            <div class="pv">
+              <div class="pvh"><span class="glyph g-ig">◎</span><div><div class="nm">sunspot.tampa</div><div class="tm">Tampa, Florida</div></div></div>
+              <div style="container-type:inline-size"><div class="poster" style="border-radius:0"><div class="lay p-road"></div><div class="p-sun" style="width:26%;right:14%;top:14%"></div><div class="p-lane"></div><div class="p-shoulder l"></div><div class="p-shoulder r"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-txt"><div class="kick">Tampa · this weekend</div><div class="hl">Road<br>ready</div></div><div class="p-logo"><i></i>Sunspot</div></div></div>
+              <div class="pvf"><span>♡</span><span>💬</span><span>↗</span><span class="spacer"></span><span>🔖</span></div>
+              <div class="pvb"><b>sunspot.tampa</b> Tampa, it is going to be a 99° kind of weekend. 🥵 <span class="dim">more</span><div class="dim" style="font-size:11px;margin-top:5px">#Tampa #HydePark #Gasparilla #TireSafety #NewTires #RoadReady</div></div>
+            </div>
+            <div class="hint">Published through the container flow: create, poll for status, then publish. 1080 × 1080 master used; the 1080 × 1350 crop is available if you switch the aspect.</div>
+          </div>
+
+          <div id="p-gbp" class="pvpane" style="display:none">
+            <div class="pv">
+              <div class="pvh"><span class="glyph g-gbp">G</span><div><div class="nm">Sunspot Tire Company · Hyde Park Village</div><div class="tm">What&rsquo;s new · Tampa, FL</div></div></div>
+              <div style="container-type:inline-size"><div class="poster" style="border-radius:0;aspect-ratio:1.4"><div class="lay p-road"></div><div class="p-sun" style="width:24%;right:14%;top:12%"></div><div class="p-lane"></div><div class="p-shoulder l"></div><div class="p-shoulder r"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div><div class="p-logo"><i></i>Sunspot</div></div></div>
+              <div class="pvb" style="padding-top:9px">Heat index near 99° in Tampa this weekend: hot pavement is hard on worn tires. Two blocks off the Riverwalk and a short drive from Gasparilla Music Festival: pressure and tread checks, oil changes, rotations, and new sets fitted while you wait.</div>
+              <div class="pvf"><span style="color:var(--accent);font-weight:600">Get directions</span></div>
+            </div>
+            <div class="banner warn" style="margin-top:10px;font-size:12.5px"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 17.4A2 2 0 004.2 20.4h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><div><b>Adapted for Google.</b> Short variant used (245 of 1,500 characters), 6 hashtags stripped, image re-cropped to landscape. Emoji kept · Google renders them.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sfoot"><span class="dim" style="font-size:12.5px">3 channels selected · idempotency key <span class="mono">pub_tampa_c220_v3</span></span><span class="spacer"></span><button class="btn" onclick="closePublish()">Cancel</button><button class="btn pri" onclick="doPublish()">Publish to 3 channels</button></div>
+    </div>
+
+    <!-- status -->
+    <div id="pubStatus" style="display:none">
+      <div style="padding:18px">
+        <div class="eyebrow" style="margin-bottom:10px">Per-channel result</div>
+        <div class="pubrow"><span class="glyph g-fb">f</span><div><div style="font-weight:600;font-size:13px">Facebook Page</div><div class="dim" style="font-size:11.5px" id="fbNote">Queued</div></div><span class="st" id="fbSt"><span class="pill draft">Queued</span></span></div>
+        <div class="pubrow"><span class="glyph g-ig">◎</span><div><div style="font-weight:600;font-size:13px">Instagram Business</div><div class="dim" style="font-size:11.5px" id="igNote">Queued</div></div><span class="st" id="igSt"><span class="pill draft">Queued</span></span></div>
+        <div class="pubrow"><span class="glyph g-gbp">G</span><div><div style="font-weight:600;font-size:13px">Google Business Profile</div><div class="dim" style="font-size:11.5px" id="gbNote">Queued</div></div><span class="st" id="gbSt"><span class="pill draft">Queued</span></span></div>
+        <div id="pubMsg" style="margin-top:12px"></div>
+      </div>
+      <div class="sfoot"><span class="dim" style="font-size:12.5px" id="pubFoot">Publishing…</span><span class="spacer"></span><button class="btn" onclick="closePublish()">Done</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NOTIFICATIONS ════════════════════════════════════ -->
+<aside class="drawer" id="drawer" aria-label="Notifications">
+  <div class="chead"><h3>Notifications</h3><span class="pill sig">4 new</span><span class="spacer"></span>
+    <button class="btn sm ghost" onclick="document.querySelectorAll('.ntf.new').forEach(function(n){n.classList.remove('new')})">Mark all read</button>
+    <button class="iconbtn" onclick="document.getElementById('drawer').classList.remove('on')" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div style="overflow-y:auto;flex:1">
+    <div class="ntf new"><span class="ic" style="background:var(--warn-soft);color:var(--warn)">!</span><div><div class="tx"><b>Google Business Profile token expires in 4 days.</b> 14 locations affected.</div><div class="tm">10 min ago</div><button class="btn sm" style="margin-top:7px" onclick="go('connections');document.getElementById('drawer').classList.remove('on')">Reconnect</button></div></div>
+    <div class="ntf new"><span class="ic" style="background:var(--crit-soft);color:var(--crit)">✕</span><div><div class="tx"><b>Boise · Downtown cycle failed.</b> All three sources timed out; nothing was generated.</div><div class="tm">Today 08:07</div><button class="btn sm" style="margin-top:7px" onclick="runNow('Boise · Downtown')">Run now</button></div></div>
+    <div class="ntf new"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">◎</span><div><div class="tx"><b>6 new drafts ready for review.</b> Weekly cycle finished across 45 locations.</div><div class="tm">Yesterday 09:46</div><button class="btn sm" style="margin-top:7px" onclick="go('drafts');document.getElementById('drawer').classList.remove('on')">Review queue</button></div></div>
+    <div class="ntf new"><span class="ic" style="background:var(--warn-soft);color:var(--warn)">$</span><div><div class="tx"><b>Generation spend passed 80% of the August cap.</b> $412.80 of $600.</div><div class="tm">Yesterday 22:15</div></div></div>
+    <div class="ntf"><span class="ic" style="background:var(--ok-soft);color:var(--ok)">✓</span><div><div class="tx">Nashville · <b>Gulch game night</b> published to Facebook and Instagram.</div><div class="tm">20 Aug 17:41</div></div></div>
+    <div class="ntf"><span class="ic" style="background:var(--ok-soft);color:var(--ok)">✓</span><div><div class="tx">Tampa: image <b>v3</b> finished generating while you were away.</div><div class="tm">20 Aug 09:12</div></div></div>
+  </div>
+  <div class="srcbar"><span>Email copies follow your <a href="#" onclick="go('users');return false">notification preferences</a>.</span></div>
+</aside>
+
+<div class="toasts" id="toasts"></div>
+
+<style>
+.poster{container-type:inline-size}
+.poster .p-sun{inset:auto;right:10%;top:10%;width:34%;height:auto;aspect-ratio:1}
+.mini .p-txt{left:7%;right:7%;bottom:7%}
+.mini .p-txt .kick{font-size:4.6px;letter-spacing:.08em}
+.mini .p-txt .hl{font-size:11px;margin-top:2px}
+.mini .p-txt .sl{display:none}
+.mini .p-logo{font-size:4.6px;padding:1.5px 4px 1.5px 2px;border-radius:9px}
+.pvpane .hint{max-width:392px}
+</style>
+
+<script>
+/* ── navigation ─────────────────────────────────────── */
+var TITLES={overview:'Overview',franchises:'Campaigns',franchise:'Gulf Coast road readiness',drafts:'Collateral',draft:'Beat the heat',analytics:'Analytics',jobs:'Cycle monitor',connections:'Connections',settings:'Settings',users:'Users & roles',audit:'Audit log'};
+var PARENT={franchise:'Campaigns',draft:'Collateral'};
+function go(name){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
+  var el=document.getElementById('s-'+name); if(el)el.classList.add('on');
+  document.querySelectorAll('.nav a').forEach(function(a){a.classList.remove('sel')});
+  var key=name==='franchise'?'franchises':(name==='draft'?'drafts':name);
+  var nav=document.querySelector('.nav a[data-s="'+key+'"]'); if(nav)nav.classList.add('sel');
+  document.getElementById('crumb').textContent=TITLES[name]||name;
+  document.getElementById('crumb2').textContent=PARENT[name]?'':'';
+  if(PARENT[name]){document.getElementById('crumb').innerHTML='<span class="dim" style="font-weight:400">'+PARENT[name]+' / </span>'+TITLES[name]}
+  document.getElementById('rail').classList.remove('on');
+  window.scrollTo({top:0,behavior:'instant'});
+  if(name==='draft')renderCanvas();
+}
+function signIn(){
+  var role=document.getElementById('roleSel').value;
+  document.body.classList.toggle('role-marketer',role==='marketer');
+  document.getElementById('uname').textContent=role==='admin'?'Dana':'Priya';
+  document.getElementById('avi').textContent=role==='admin'?'DW':'PR';
+  document.getElementById('urole').textContent=role==='admin'?'Admin':'Marketer';
+  document.getElementById('login').classList.add('off');
+  document.getElementById('app').classList.add('on');
+  renderCanvas();
+  setTimeout(function(){toast('ok','6 drafts are waiting','Weekly cycle finished across 45 of 47 locations.')},700);
+}
+function toast(kind,title,msg){
+  var box=document.getElementById('toasts');
+  var t=document.createElement('div');
+  t.className='toast '+(kind||'');
+  t.innerHTML='<b>'+title+'</b>'+(msg?'<span class="dim">'+msg+'</span>':'');
+  box.appendChild(t);
+  setTimeout(function(){t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(function(){t.remove()},320)},4200);
+}
+function runNow(who){toast('ok','Cycle queued for '+who,'Idempotency key reused: a re-run cannot double-generate.')}
+
+/* ── tables ─────────────────────────────────────────── */
+function sortT(th,idx,type){
+  var tbl=th.closest('table'), tb=tbl.tBodies[0];
+  var up=!th.classList.contains('up');
+  tbl.querySelectorAll('th.srt').forEach(function(h){h.classList.remove('up','dn')});
+  th.classList.add(up?'up':'dn');
+  var rows=Array.prototype.slice.call(tb.rows);
+  rows.sort(function(a,b){
+    var x=a.cells[idx].textContent.trim(), y=b.cells[idx].textContent.trim();
+    if(type==='n'){x=parseFloat(x.replace(/[^0-9.\-]/g,''))||0;y=parseFloat(y.replace(/[^0-9.\-]/g,''))||0;return up?x-y:y-x}
+    return up?x.localeCompare(y):y.localeCompare(x);
+  });
+  rows.forEach(function(r){tb.appendChild(r)});
+}
+function filterLoc(){
+  var q=document.getElementById('locSearch').value.toLowerCase();
+  var reg=document.getElementById('locRegion').value, st=document.getElementById('locStatus').value;
+  var n=0;
+  document.querySelectorAll('#locBody tr').forEach(function(r){
+    var ok=r.textContent.toLowerCase().indexOf(q)>-1;
+    if(reg.indexOf('All')<0&&r.dataset.r!==reg)ok=false;
+    if(st==='Active'&&r.dataset.st!=='Active')ok=false;
+    if(st==='Paused'&&r.dataset.st!=='Paused')ok=false;
+    r.style.display=ok?'':'none'; if(ok)n++;
+  });
+  document.getElementById('locCount').textContent=n+' shown';
+}
+function seg(b){b.parentNode.querySelectorAll('button').forEach(function(x){x.classList.remove('sel')});b.classList.add('sel')}
+function tab(b,id){
+  b.parentNode.querySelectorAll('button').forEach(function(x){x.classList.remove('sel')});b.classList.add('sel');
+  b.closest('.card').querySelectorAll('.tabp').forEach(function(p){p.classList.remove('on')});
+  document.getElementById(id).classList.add('on');
+}
+function pv(b,id){
+  seg(b);
+  ['p-fb','p-ig','p-gbp'].forEach(function(x){document.getElementById(x).style.display=x===id?'':'none'});
+}
+
+/* ── draft studio ───────────────────────────────────── */
+var V=[
+ {n:1,v:'heat', logo:false,kick:'Tampa · this weekend',hl:'Road<br>ready',sl:'Tires · oil · rotations: two blocks off the Riverwalk'},
+ {n:2,v:'road', logo:false,kick:'Tampa · this weekend',hl:'Road<br>ready',sl:'Tires · oil · rotations: two blocks off the Riverwalk'},
+ {n:3,v:'road', logo:true, kick:'Tampa · this weekend',hl:'Road<br>ready',sl:'Tires · oil · rotations: two blocks off the Riverwalk'}
+];
+var active=2, iter=3, compare=false, sizeMode='sq', state='draft';
+
+function layers(v){
+  if(v==='heat')  return '<div class="lay p-heat"></div><div class="p-sun"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div>';
+  if(v==='beach') return '<div class="lay p-beach"></div><div class="p-sun"></div><div class="p-wave"></div><div class="p-wave b"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div>';
+  if(v==='road')  return '<div class="lay p-road"></div><div class="p-sun" style="width:26%;right:14%;top:14%"></div><div class="p-lane"></div><div class="p-shoulder l"></div><div class="p-shoulder r"></div><div class="lay p-grain"></div><div class="lay p-scrim"></div>';
+  if(v==='dusk')  return '<div class="lay p-dusk"></div><div class="p-sun" style="opacity:.9;width:26%;top:38%;right:13%"></div><div class="lay p-grain"></div><div class="lay p-vig"></div><div class="lay p-scrim"></div>';
+  return '<div class="lay p-fest"></div><div class="p-bokeh" style="width:34%;left:12%;top:18%"></div><div class="p-bokeh" style="width:18%;left:62%;top:34%"></div><div class="lay p-grain"></div>';
+}
+function posterHTML(ver,mini,extra){
+  return '<div class="poster'+(sizeMode==='pt'?' port':'')+(mini?' mini':'')+'">'+layers(ver.v)+
+    '<div class="p-txt"><div class="kick">'+ver.kick+'</div><div class="hl">'+ver.hl+'</div><div class="sl">'+ver.sl+'</div></div>'+
+    (ver.logo?'<div class="p-logo"><i></i>Sunspot</div>':'')+(extra||'')+'</div>';
+}
+function renderCanvas(){
+  var c=document.getElementById('canvas'); if(!c)return;
+  var cur=V[active];
+  if(compare){
+    var prev=V[Math.max(0,active-1)];
+    c.innerHTML='<div class="cmp"><div><div class="lbl"><span>v'+prev.n+' previous</span><span>'+(prev.logo?'logo on':'no logo')+'</span></div>'+posterHTML(prev)+'</div>'+
+      '<div><div class="lbl"><span>v'+cur.n+' active</span><span>'+(cur.logo?'logo on':'no logo')+'</span></div>'+posterHTML(cur,false,'<div class="gen" id="genOv"><div style="text-align:center"><div class="spin"></div><div class="mono" style="font-size:12px">Generating…</div></div></div>')+'</div></div>';
+  }else{
+    c.innerHTML='<div style="max-width:520px;margin:0 auto">'+posterHTML(cur,false,'<div class="gen" id="genOv"><div style="text-align:center"><div class="spin"></div><div class="mono" style="font-size:12px" id="genTxt">Generating…</div></div></div>')+'</div>';
+  }
+  var f=document.getElementById('film');
+  f.innerHTML=V.map(function(ver,i){
+    return '<div class="vthumb'+(i===active?' sel':'')+'" onclick="setActive('+i+')">'+posterHTML(ver,true)+'<div class="vl">v'+ver.n+(i===active?' ●':'')+'</div></div>';
+  }).join('')+'<div style="flex:0 0 auto;padding:14px 8px;max-width:150px" class="dim"><div class="eyebrow">All versions kept</div><div style="font-size:11.5px;margin-top:4px">Click a version to make it active. Nothing is overwritten.</div></div>';
+  document.getElementById('verBadge').textContent='v'+cur.n+' active';
+  document.getElementById('iterN').textContent=iter;
+  document.getElementById('capLeft').textContent=(10-iter)+' left';
+}
+function setActive(i){active=i;renderCanvas();toast('ok','v'+V[i].n+' set active','This is the version that publishes.')}
+function setSize(b,m){seg(b);sizeMode=m;renderCanvas()}
+function toggleCompare(){compare=!compare;document.getElementById('cmpBtn').classList.toggle('pri',compare);renderCanvas()}
+function revert(){active=1;renderCanvas();toast('wr','Reverted to v2','v3 is still in history and can be restored.')}
+function genImage(){
+  var p=document.getElementById('prompt').value.trim();
+  if(!p){toast('bad','Describe the change first','Tell the model what to change about the current image.');return}
+  if(iter>=10){toast('bad','Iteration cap reached','10 of 10 used on this draft. Raising it needs a configuration change and a release.');return}
+  var chat=document.getElementById('chat');
+  chat.insertAdjacentHTML('beforeend','<div class="msg u">'+p+'</div>');
+  chat.scrollTop=chat.scrollHeight;
+  document.getElementById('prompt').value='';
+  document.getElementById('genBtn').disabled=true;
+  var ov=document.getElementById('genOv'); if(ov)ov.classList.add('on');
+  setTimeout(function(){
+    var next={n:V[V.length-1].n+1,v:'dusk',logo:true,kick:'Tampa · this weekend',hl:'Road<br>ready',sl:'Tires · oil · rotations: two blocks off the Riverwalk'};
+    V.push(next); active=V.length-1; iter++;
+    renderCanvas();
+    document.getElementById('genBtn').disabled=false;
+    document.getElementById('chat').insertAdjacentHTML('beforeend','<div class="msg s">Created <b>v'+next.n+'</b> from v'+V[active-1].n+' as reference and set it active. 17.4 s, $0.09.</div>');
+    document.getElementById('chat').scrollTop=99999;
+    toast('ok','v'+next.n+' ready','Image generated in 17.4 s · $0.09 · '+(10-iter)+' iterations left.');
+    if(state==='approved')dirty();
+  },2400);
+}
+function toggleCtx(){
+  var r=document.getElementById('ctxRow');
+  r.style.display=r.style.display==='none'?'':'none';
+  if(r.style.display==='')document.getElementById('ctxInput').focus();
+}
+function addCtx(){
+  var v=document.getElementById('ctxInput').value.trim();
+  if(!v){toast('bad','Describe the context first','Tell the generator what to include.');return}
+  var hint=document.querySelector('#ctxRow').previousElementSibling;
+  hint.insertAdjacentHTML('beforebegin',
+    '<div class="why"><span class="n2" style="background:var(--violet-soft);color:var(--violet)">+</span><div><div class="a">'+v+'</div><div class="src">Custom · added by Dana Whitfield just now · stored on the campaign, shown in audit</div></div></div>');
+  document.getElementById('ctxInput').value='';
+  document.getElementById('ctxRow').style.display='none';
+  var chat=document.getElementById('chat');
+  chat.insertAdjacentHTML('beforeend','<div class="msg u">Context: '+v+'</div><div class="msg s">Rewrote all three copy variants with your context as a fourth source. Still grounded: everything else comes from snapshot v14.</div>');
+  chat.scrollTop=99999;
+  toast('ok','Context added: copy regenerated','Your addition is labelled as its own source and kept for audit.');
+  if(state==='approved')dirty();
+}
+function regenCopy(){
+  var p=window.prompt('How should the copy change?','Make it funnier and lead with the festival instead of the heat');
+  if(!p)return;
+  document.getElementById('chat').insertAdjacentHTML('beforeend','<div class="msg u">Copy: '+p+'</div><div class="msg s">Rewrote all three variants against snapshot v14. Still grounded: the festival name, date and 1.9 mi distance come from the events source.</div>');
+  document.getElementById('chat').scrollTop=99999;
+  document.getElementById('capMain').value='Gasparilla is basically on our doorstep this Saturday, Tampa. 🎶\n\nCurtis Hixon Park is a short drive away, and with the heat index near 99° the pavement will be punishing worn tread all weekend. Get a pressure and tread check before you head out, or have a fresh set fitted while you wait: two blocks off the Riverwalk.\n\nOil changes and rotations all weekend. 🛞\n\n#Tampa #HydePark #Gasparilla #TireSafety #RoadReady';
+  toast('ok','Copy regenerated','Previous wording kept in version history.');
+  if(state==='approved')dirty();
+}
+function approve(){
+  state='approved';
+  document.getElementById('statePill').className='pill appr';
+  document.getElementById('statePill').textContent='Approved';
+  document.getElementById('btnApprove').textContent='Approved ✓';
+  document.getElementById('btnApprove').disabled=true;
+  document.getElementById('btnPublish').disabled=false;
+  document.getElementById('draftFlag').style.display='none';
+  toast('ok','Approved','Only approved collateral can be published. Recorded in the audit log.');
+}
+function dirty(){
+  if(state!=='approved')return;
+  state='draft';
+  document.getElementById('statePill').className='pill draft';
+  document.getElementById('statePill').textContent='Draft';
+  document.getElementById('btnApprove').textContent='Approve';
+  document.getElementById('btnApprove').disabled=false;
+  document.getElementById('btnPublish').disabled=true;
+  document.getElementById('draftFlag').style.display='flex';
+  toast('wr','Back to Draft','Edited after approval, so it needs re-approving before it can publish.');
+}
+
+/* ── publish ────────────────────────────────────────── */
+function openLocations(){document.getElementById('locScrim').classList.add('on')}
+function closeLocations(){document.getElementById('locScrim').classList.remove('on')}
+function addLocation(){
+  var n=document.getElementById('newLocName').value.trim();
+  var z=document.getElementById('newLocZips').value.trim();
+  var r=document.getElementById('newLocRad').value;
+  if(!n||!z){toast('bad','Name and at least one ZIP','A location needs a name and one or many ZIP codes.');return}
+  var zips=z.split(',').map(function(x){return x.trim()}).filter(Boolean);
+  document.getElementById('locMgmtBody').insertAdjacentHTML('beforeend',
+    '<tr><td><b>'+n+'</b><div class="dim" style="font-size:11.5px">Geocoding on save…</div></td><td class="mono dim">'+zips.join(' · ')+'</td><td class="mono">'+r+'</td><td class="dim">Not in a campaign yet</td><td><span class="pill draft">New</span></td><td><button class="btn sm ghost">Edit</button></td></tr>');
+  document.getElementById('newLocName').value='';document.getElementById('newLocZips').value='';
+  toast('ok','Location added','ZIPs validated and geocoded on save. Attach it to a campaign to start cycles.');
+}
+function dtab(which){
+  var c=which==='content';
+  document.getElementById('paneContent').style.display=c?'':'none';
+  document.getElementById('paneMap').style.display=c?'none':'';
+  document.getElementById('dtabC').classList.toggle('sel',c);
+  document.getElementById('dtabM').classList.toggle('sel',!c);
+}
+function openPublish(){
+  if(document.getElementById('btnPublish').disabled&&document.getElementById('s-draft').classList.contains('on')){
+    toast('bad','Approve it first','Publishing is only available for approved collateral.');return;
+  }
+  document.getElementById('pubSetup').style.display='';
+  document.getElementById('pubStatus').style.display='none';
+  document.getElementById('scrim').classList.add('on');
+}
+function closePublish(){document.getElementById('scrim').classList.remove('on')}
+function pickChan(el){setTimeout(function(){el.classList.toggle('sel',el.querySelector('input').checked)},0)}
+function setSt(id,cls,txt,note){
+  document.getElementById(id+'St').innerHTML='<span class="pill '+cls+'">'+txt+'</span>';
+  if(note)document.getElementById(id+'Note').innerHTML=note;
+}
+function doPublish(){
+  document.getElementById('pubSetup').style.display='none';
+  document.getElementById('pubStatus').style.display='';
+  ['fb','ig','gb'].forEach(function(k){setSt(k,'draft','Queued','Queued')});
+  document.getElementById('pubMsg').innerHTML='';
+  document.getElementById('pubFoot').textContent='Publishing…';
+  setTimeout(function(){setSt('ig','warn','Publishing','Container created, polling for status')},500);
+  setTimeout(function(){setSt('fb','warn','Publishing','Uploading photo')},700);
+  setTimeout(function(){setSt('gb','warn','Publishing','Creating local post')},900);
+  setTimeout(function(){setSt('ig','live','Published','<a href="#" onclick="return false">instagram.com/p/C9xT2mQr</a> · post 17914_882')},2300);
+  setTimeout(function(){setSt('gb','live','Published','<a href="#" onclick="return false">Local post live</a> · loc/1122-9')},2900);
+  setTimeout(function(){
+    setSt('fb','fail','Failed','Facebook rejected the image: the photo is larger than the Page&rsquo;s 8 MB limit.');
+    document.getElementById('pubMsg').innerHTML='<div class="banner crit"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><div style="flex:1"><b>Instagram and Google are live. Facebook failed.</b> Retrying only re-sends Facebook: the two live posts are untouched, and the idempotency key stops a duplicate.<div class="row" style="margin-top:8px"><button class="btn sm pri" onclick="retryFB()">Retry Facebook</button><button class="btn sm ghost" onclick="closePublish()">Leave it for now</button></div></div></div>';
+    document.getElementById('pubFoot').textContent='2 of 3 published · 1 failed';
+    toast('bad','Facebook publish failed','Image over the 8 MB Page limit. Retry available per channel.');
+  },3600);
+}
+function retryFB(){
+  setSt('fb','warn','Retrying','Re-encoding at 1080² and re-uploading');
+  setTimeout(function(){
+    setSt('fb','live','Published','<a href="#" onclick="return false">facebook.com/sunspottampa/posts/9814</a> · post 17841_402');
+    document.getElementById('pubMsg').innerHTML='<div class="banner info"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><div><b>All three channels are live.</b> Metrics collection starts in about 6 hours and runs to day 30.</div></div>';
+    document.getElementById('pubFoot').textContent='3 of 3 published';
+    toast('ok','Facebook published','No duplicate on Instagram or Google: retry was scoped to the failed channel.');
+  },1800);
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closePublish();document.getElementById('drawer').classList.remove('on')}});
+</script>
