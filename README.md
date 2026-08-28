@@ -61,44 +61,36 @@ can never be committed. Document root is `/home/wplive/web/wp-live/`.
 Pull first, commit, then edit. The server is authoritative: someone can change
 the theme through wp-admin at any time, so a pull can overwrite local work.
 
-## `site/v2/` — the redesign preview
+## The v2 redesign is live
 
-A static snapshot of the Next.js site served at **ferratalabs.ai/v2/**, so the
-repositioning work can be reviewed on the real domain before anything is ported
-into the theme. It is not WordPress: 17 plain HTML files plus their assets, sitting
-in a directory the WordPress rewrite passes straight through.
+The repositioning shipped into the theme on 28 Aug 2026 and `/v2/` was deleted from
+the server, so the preview no longer exists. The site itself is now the v2 design.
 
-**It is self-contained.** Every internal link stays inside `/v2/`, so clicking
-around the preview never drops back onto the live v1 pages. That is `basePath`,
-set in the Next repo's `next.config.ts` and gated behind `PREVIEW_BASE` so normal
-production builds are untouched.
-
-**Every page carries `noindex, nofollow`.** A preview on the live domain is
-near-duplicate content against the real pages, and the snapshot script refuses to
-write a page it could not mark. Do not "fix" this by removing the meta tag.
-
-To regenerate after further changes in the Next repo:
+`parts/*.php` and `assets/site.css` are **generated**, not written here. Regenerate
+with, from `../FerrataLabs`:
 
 ```bash
-cd ../FerrataLabs
-PREVIEW_BASE=/v2 npm run build
-PREVIEW_BASE=/v2 npx next start -p 3002 &
-node scripts/snapshot-preview.mjs /v2 http://localhost:3002 ../FerrataLabs-WordPress/site/v2
+npm run build && npx next start -p 3000 &
+node scripts/export-theme.mjs ../FerrataLabs-WordPress/site/wp-content/themes/ferrata-labs
 ```
 
-Then upload `site/v2/` wholesale. Chunk filenames are content-hashed and the build
-ID changes every build, so **delete the remote `v2/_next/` first** or the directory
-accumulates orphans from every previous snapshot.
+A part is the inner HTML of `<main>` on the matching Next route, because header.php
+ends by opening `<main>` and footer.php begins by closing it. Do not hand-edit a
+part: the next export overwrites it. Two things the exporter protects:
 
-Two things the snapshot cannot carry, both expected:
+- **The contact form is never copied.** In Next it is a server action and would be
+  dead markup here, so the exporter replaces the card with `inc/contact-card.php`,
+  the working PHP port. The enquiry form keeps submitting.
+- **`@font-face` is stripped from the stylesheet.** `fonts.css` already declares the
+  faces with theme-relative URLs; the build's copies point at `/_next/`.
 
-- **The contact form does not submit.** It is a Next server action and there is no
-  Next server behind these files. The form renders for review only.
-- **`/pledge` and `/sterling` are absent.** The crawler follows links, and nothing
-  links to the unlisted consoles. That is the correct outcome, per CLAUDE.md §12.
+**Bump `FERRATA_VERSION` in functions.php whenever the stylesheet changes**, or the
+`?ver=` cache-buster does not move and browsers keep the old CSS.
 
-Delete the whole thing with one `rm -r` of `v2/` on the server when it has served
-its purpose. Nothing else references it.
+**Purge the 10Web cache after any deploy.** Page HTML is cached at 10Web's nginx
+layer, not in `wp-content/cache`, so SFTP cannot clear it. Without a purge the site
+serves the old page and the deploy looks like it failed. Dashboard, then Caching,
+then clear. `?cb=<random>` bypasses it for checking.
 
 ## `site/LocalPulse/` — the LocalPulse prototype
 

@@ -37,8 +37,8 @@ sub1(
     # an SVG favicon, falls back to /favicon.ico, which 404s here, and keeps
     # showing whatever it cached for the origin previously. Matching the theme's
     # URL byte for byte also means the whole domain shares one cache entry.
-    '<link rel="icon" href="/wp-content/themes/ferrata-labs/assets/icon.svg?ver=1.1.3" sizes="any" type="image/svg+xml">\n'
-    '<link rel="apple-touch-icon" href="/wp-content/themes/ferrata-labs/assets/apple-icon.png?ver=1.1.3" sizes="180x180" type="image/png">\n'
+    '<link rel="icon" href="/wp-content/themes/ferrata-labs/assets/icon.svg?ver=1.2.0" sizes="any" type="image/svg+xml">\n'
+    '<link rel="apple-touch-icon" href="/wp-content/themes/ferrata-labs/assets/apple-icon.png?ver=1.2.0" sizes="180x180" type="image/png">\n'
     '<!-- The same self-hosted faces the live site uses, referenced rather than copied\n'
     '     so this prototype cannot drift from the brand. -->\n'
     '<link rel="stylesheet" href="/wp-content/themes/ferrata-labs/assets/fonts.css">',

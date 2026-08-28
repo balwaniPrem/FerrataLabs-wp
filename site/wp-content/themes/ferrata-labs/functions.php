@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FERRATA_VERSION', '1.1.3' );
+define( 'FERRATA_VERSION', '1.2.0' );
 
 /** Page URI => part file. The URI is what get_page_uri() returns, e.g. "agents/sterling". */
 function ferrata_routes(): array {
